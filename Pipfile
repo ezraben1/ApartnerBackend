@@ -8,6 +8,7 @@ django = "*"
 dj-database-url = "*"
 django-filter = "*"
 django-cors-headers = "*"
+django-rest-framework = "*"
 
 [dev-packages]
 
