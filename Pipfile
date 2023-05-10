@@ -21,7 +21,6 @@ defusedxml = "==0.7.1"
 distlib = "==0.3.6"
 django-debug-toolbar = "==4.0.0"
 django-extensions = "==3.2.1"
-django-filters = "==23.2"
 django-phonenumber-field = "==7.1.0"
 django-rest-framework-nested = "==0.0.1"
 django-templated-mail = "==1.1.1"
@@ -59,6 +58,7 @@ urllib3 = "==1.26.15"
 virtualenv = "==20.22.0"
 virtualenv-clone = "==0.5.7"
 whitenoise = "==6.4.0"
+filters = "*"
 
 [dev-packages]
 
