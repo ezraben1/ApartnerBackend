@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 django = "*"
 dj-database-url = "*"
+django-filter = "*"
 
 [dev-packages]
 
