@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+</head>
+<body>
+    <h1>Welcome to the Home Page</h1>
+    <ul>
+        <li><a href="{% url 'core:rooms-list' %}">Rooms</a></li>
+        <li><a href="{% url 'core:apartments-list' %}">Apartments</a></li>
+        <li><a href="{% url 'core:users-list' %}">Users</a></li>
+        <li><a href="{% url 'core:bills-list' %}">Bills</a></li>
+    </ul>
+    
+    
+</body>
+</html>
