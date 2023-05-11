@@ -21,15 +21,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-406_2can@1@=mpv&wtm5*00vfg3i3x6pi61nv5ab)2fv4o$c!i"
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".herokuapp.com"]
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -112,19 +103,7 @@ WSGI_APPLICATION = "apartner.wsgi.application"
 import os
 import dj_database_url
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "apartner",
-        "HOST": "localhost",
-        "USER": "root",
-        "PASSWORD": "123456",
-    }
-}
-
-# Use Heroku's PostgreSQL database in production
-if "DATABASE_URL" in os.environ:
-    DATABASES["default"] = dj_database_url.config(conn_max_age=600, ssl_require=True)
+SECRET_KEY = "django-insecure-406_2can@1@=mpv&wtm5*00vfg3i3x6pi61nv5ab)2fv4o$c!i"
 
 
 AUTH_USER_MODEL = "core.CustomUser"
