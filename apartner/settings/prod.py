@@ -1,3 +1,4 @@
+# prod.py
 import os
 from .common import *
 import dj_database_url
@@ -13,4 +14,4 @@ ALLOWED_HOSTS = [
     "apartnerbackend.herokuapp.com",
 ]
 
-DATABASES = {"default": {dj_database_url.config()}}
+DATABASES = {"default": dj_database_url.config()}
