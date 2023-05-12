@@ -263,6 +263,29 @@ class RoomViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+class SignUpLoginViewSet(ModelViewSet):
+    queryset = CustomUser.objects.all()
+    serializer_class = serializers.CustomUserSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        username = serializer.validated_data["username"]
+        if CustomUser.objects.filter(username=username).exists():
+            return Response(
+                {"error": "Username already exists."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
+
 class CustomUserViewSet(ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = serializers.CustomUserSerializer

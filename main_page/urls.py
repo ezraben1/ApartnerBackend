@@ -2,7 +2,7 @@ from django.urls import path
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_nested import routers
-from core.views import CustomUserViewSet
+from core.views import SignUpLoginViewSet
 import login.views
 
 
@@ -22,7 +22,7 @@ class APIRoot(APIView):
 
 router = routers.DefaultRouter()
 router.register("login", login.views.LoginViewSet, basename="login")
-router.register("signup", CustomUserViewSet, basename="signup")
+router.register("signup", SignUpLoginViewSet, basename="signup")
 
 urlpatterns = [
     path("", APIRoot.as_view(), name="api-root"),
