@@ -66,6 +66,8 @@ class OwnerApartmentViewSet(ApartmentViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
+            print(request.data)  # Debug: print the request data
+            print(serializer.errors)  # Debug: print the serializer errors
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True)
@@ -103,7 +105,7 @@ class OwnerRoomViewSet(RoomViewSet):
             print(upload_result)  # Debug: print the upload result
             request.data["image"] = upload_result["url"]
 
-        serializer = serializers.ApartmentImageSerializer(
+        serializer = serializers.RoomImageSerializer(
             data=request.data, context={"room_id": room.id}
         )
 
