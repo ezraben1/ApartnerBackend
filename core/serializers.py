@@ -142,7 +142,7 @@ class ApartmentSerializer(serializers.ModelSerializer):
 
 
 class ContractSerializer(serializers.ModelSerializer):
-    file = serializers.FileField(required=False)
+    file = serializers.FileField(required=False, max_length=None, use_url=True)
 
     room_id = serializers.IntegerField(source="room.id", read_only=True)
     apartment_id = serializers.PrimaryKeyRelatedField(
