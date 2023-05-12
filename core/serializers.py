@@ -71,7 +71,6 @@ class BillSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_by", "created_at"]
 
     def validate(self, data):
-        # Validate apartment ownership
         user = self.context["request"].user
         if "apartment" in data and data["apartment"].owner != user:
             raise serializers.ValidationError(
@@ -217,7 +216,6 @@ class RoomSerializer(serializers.ModelSerializer):
             "building_number",
             "apartment_number",
             "floor",
-            "images",
             "renter_search",
         ]
 
