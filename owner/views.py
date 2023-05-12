@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from core import serializers
-from core.models import Apartment, Bill, Contract, Room
+from core.models import Apartment, ApartmentImage, Bill, Contract, Room, RoomImage
 from core.permissions import IsApartmentOwner
 from rest_framework import permissions, status
 from core.views import ApartmentViewSet, RoomViewSet
@@ -53,20 +53,17 @@ class OwnerApartmentViewSet(ApartmentViewSet):
     )
     def upload_image(self, request, pk=None):
         apartment = self.get_object()
-        data = request.data.copy()  # Make a mutable copy
-        if "image" in request.FILES:
-            upload_result = upload(request.FILES["image"])
-            data["image"] = upload_result["url"]
 
-        serializer = serializers.ApartmentImageSerializer(
-            data=data, context={"apartment_id": apartment.id}
+        if "images" in request.FILES:
+            for img in request.FILES.getlist("images"):
+                upload_result = upload(img)
+                image_url = upload_result["url"]
+
+                ApartmentImage.objects.create(apartment=apartment, image=image_url)
+
+        return Response(
+            {"detail": "Images uploaded successfully."}, status=status.HTTP_201_CREATED
         )
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True)
     def contracts(self, request, pk=None):
@@ -98,20 +95,17 @@ class OwnerRoomViewSet(RoomViewSet):
     )
     def upload_image(self, request, pk=None):
         room = self.get_object()
-        data = request.data.copy()  # Make a mutable copy
-        if "image" in request.FILES:
-            upload_result = upload(request.FILES["image"])
-            data["image"] = upload_result["url"]
 
-        serializer = serializers.RoomImageSerializer(
-            data=data, context={"room_id": room.id}
+        if "images" in request.FILES:
+            for img in request.FILES.getlist("images"):
+                upload_result = upload(img)
+                image_url = upload_result["url"]
+
+                RoomImage.objects.create(room=room, image=image_url)
+
+        return Response(
+            {"detail": "Images uploaded successfully."}, status=status.HTTP_201_CREATED
         )
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
         apartment_id = self.kwargs.get("apartment_id")
