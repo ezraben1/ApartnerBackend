@@ -54,6 +54,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 
 class BillSerializer(serializers.ModelSerializer):
+    file = serializers.ImageField(max_length=None, use_url=True, required=False)
+
     class Meta:
         model = Bill
         fields = [
@@ -84,6 +86,8 @@ class BillSerializer(serializers.ModelSerializer):
 
 
 class ApartmentImageSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(max_length=None, use_url=True)
+
     def create(self, validated_data):
         apartment_id = self.context["apartment_id"]
         return ApartmentImage.objects.create(
@@ -138,6 +142,8 @@ class ApartmentSerializer(serializers.ModelSerializer):
 
 
 class ContractSerializer(serializers.ModelSerializer):
+    file = serializers.ImageField(max_length=None, use_url=True, required=False)
+
     room_id = serializers.IntegerField(source="room.id", read_only=True)
     apartment_id = serializers.PrimaryKeyRelatedField(
         source="room.apartment.id", read_only=True
@@ -159,6 +165,8 @@ class ContractSerializer(serializers.ModelSerializer):
 
 
 class RoomImageSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(max_length=None, use_url=True)
+
     def create(self, validated_data):
         room_id = self.context["room_id"]
         return RoomImage.objects.create(room_id=room_id, **validated_data)
@@ -252,6 +260,8 @@ class SimpleUserSerializer(serializers.ModelSerializer):
 
 
 class InquirySerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(max_length=None, use_url=True)
+
     sender = SimpleUserSerializer(read_only=True)
     receiver = SimpleUserSerializer(read_only=True)
     apartment = ApartmentSerializer(read_only=True)
