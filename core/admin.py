@@ -26,7 +26,6 @@ class RoomAdmin(admin.ModelAdmin):
     list_select_related = ["apartment"]
     search_fields = [
         "size",
-        "apartment__address",
         "apartment__city",
         "apartment__street",
         "apartment__building_number",
@@ -36,9 +35,6 @@ class RoomAdmin(admin.ModelAdmin):
 
     def apartment_address(self, room):
         return room.apartment.address
-
-    class Media:
-        css = {"all": ["core/styles.css"]}
 
 
 @admin.register(models.Apartment)
