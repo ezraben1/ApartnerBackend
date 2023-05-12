@@ -53,21 +53,19 @@ class OwnerApartmentViewSet(ApartmentViewSet):
     )
     def upload_image(self, request, pk=None):
         apartment = self.get_object()
+        data = request.data.copy()  # Make a mutable copy
         if "image" in request.FILES:
             upload_result = upload(request.FILES["image"])
-            print(upload_result)  # Debug: print the upload result
-            request.data["image"] = upload_result["url"]
+            data["image"] = upload_result["url"]
 
         serializer = serializers.ApartmentImageSerializer(
-            data=request.data, context={"apartment_id": apartment.id}
+            data=data, context={"apartment_id": apartment.id}
         )
 
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            print(request.data)  # Debug: print the request data
-            print(serializer.errors)  # Debug: print the serializer errors
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True)
@@ -100,13 +98,13 @@ class OwnerRoomViewSet(RoomViewSet):
     )
     def upload_image(self, request, pk=None):
         room = self.get_object()
+        data = request.data.copy()  # Make a mutable copy
         if "image" in request.FILES:
             upload_result = upload(request.FILES["image"])
-            print(upload_result)  # Debug: print the upload result
-            request.data["image"] = upload_result["url"]
+            data["image"] = upload_result["url"]
 
         serializer = serializers.RoomImageSerializer(
-            data=request.data, context={"room_id": room.id}
+            data=data, context={"room_id": room.id}
         )
 
         if serializer.is_valid():

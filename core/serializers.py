@@ -89,6 +89,7 @@ class ApartmentImageSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(max_length=None, use_url=True)
 
     def create(self, validated_data):
+        print(validated_data)  # Debug: print the validated data
         apartment_id = self.context["apartment_id"]
         return ApartmentImage.objects.create(
             apartment_id=apartment_id, **validated_data
