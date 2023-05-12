@@ -14,6 +14,7 @@ from .models import (
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from cloudinary.uploader import upload
+import cloudinary
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -167,7 +168,7 @@ class ContractSerializer(serializers.ModelSerializer):
 
         if file:
             # Upload file to Cloudinary and get the public URL
-            upload_result = upload(file)
+            upload_result = upload(file, resource_type="raw")
             validated_data["file"] = upload_result["url"]
 
         contract = Contract.objects.create(**validated_data)
@@ -175,11 +176,16 @@ class ContractSerializer(serializers.ModelSerializer):
         return contract
 
     def update(self, instance, validated_data):
-        file = validated_data.pop("file", None)
+        file = validated_data.get("file", None)
 
         if file:
+            # Delete the old file from Cloudinary before uploading the new one
+            if instance.file:
+                public_id = instance.file.split("/")[-1].split(".")[0]
+                cloudinary.uploader.destroy(public_id, resource_type="raw")
+
             # Upload file to Cloudinary and get the public URL
-            upload_result = upload(file)
+            upload_result = upload(file, resource_type="raw")
             validated_data["file"] = upload_result["url"]
 
         for key, value in validated_data.items():

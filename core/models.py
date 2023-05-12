@@ -132,7 +132,6 @@ class Contract(models.Model):
     )
     terms_and_conditions = models.TextField(blank=True, null=True)
     file = CloudinaryField("file", blank=True)
-    file_url = models.URLField(blank=True, null=True)
 
 
 class Room(models.Model):
