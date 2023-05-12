@@ -13,7 +13,7 @@ from .models import (
 )
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.contrib.auth import get_user_model
+from cloudinary.uploader import upload
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -142,7 +142,7 @@ class ApartmentSerializer(serializers.ModelSerializer):
 
 
 class ContractSerializer(serializers.ModelSerializer):
-    file = serializers.ImageField(max_length=None, use_url=True, required=False)
+    file = serializers.FileField(required=False)
 
     room_id = serializers.IntegerField(source="room.id", read_only=True)
     apartment_id = serializers.PrimaryKeyRelatedField(
@@ -162,6 +162,33 @@ class ContractSerializer(serializers.ModelSerializer):
             "rent_amount",
             "file",
         ]
+
+    def create(self, validated_data):
+        file = validated_data.pop("file", None)
+
+        if file:
+            # Upload file to Cloudinary and get the public URL
+            upload_result = upload(file)
+            validated_data["file"] = upload_result["url"]
+
+        contract = Contract.objects.create(**validated_data)
+
+        return contract
+
+    def update(self, instance, validated_data):
+        file = validated_data.pop("file", None)
+
+        if file:
+            # Upload file to Cloudinary and get the public URL
+            upload_result = upload(file)
+            validated_data["file"] = upload_result["url"]
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+
+        instance.save()
+
+        return instance
 
 
 class RoomImageSerializer(serializers.ModelSerializer):
