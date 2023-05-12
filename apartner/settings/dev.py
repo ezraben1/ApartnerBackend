@@ -4,7 +4,7 @@ from .common import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-406_2can@1@=mpv&wtm5*00vfg3i3x6pi61nv5ab)2fv4o$c!i"
+SECRET_KEY = "2fzk-hx1$ckm2s2epw^t^i5h1prdqy9#v(-(y%vequol()-^&_"
 
 DATABASES = {
     "default": {
