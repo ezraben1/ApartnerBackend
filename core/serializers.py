@@ -169,7 +169,7 @@ class ContractSerializer(serializers.ModelSerializer):
         if file:
             # Upload file to Cloudinary and get the public URL
             upload_result = upload(file)
-            validated_data["file"] = upload_result["url"]
+            validated_data["file_url"] = upload_result["url"]
 
         contract = Contract.objects.create(**validated_data)
 
@@ -181,7 +181,7 @@ class ContractSerializer(serializers.ModelSerializer):
         if file:
             # Upload file to Cloudinary and get the public URL
             upload_result = upload(file)
-            validated_data["file"] = upload_result["url"]
+            validated_data["file_url"] = upload_result["url"]
 
         for key, value in validated_data.items():
             setattr(instance, key, value)

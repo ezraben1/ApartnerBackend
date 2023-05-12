@@ -29,7 +29,7 @@ class CustomUser(AbstractUser):
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)
-    avatar = CloudinaryField("image")
+    avatar = CloudinaryField("image", null=True)
     phone = PhoneNumberField(blank=True, null=True)
 
     age = models.PositiveIntegerField(blank=True, null=True)
@@ -105,7 +105,7 @@ class Apartment(models.Model):
 
 
 class ApartmentImage(models.Model):
-    image = CloudinaryField("image")
+    image = CloudinaryField("image", null=True)
 
     apartment = models.ForeignKey(
         Apartment,
@@ -131,7 +131,8 @@ class Contract(models.Model):
         max_digits=8, decimal_places=2, validators=[MinValueValidator(1)]
     )
     terms_and_conditions = models.TextField(blank=True, null=True)
-    file = CloudinaryField("file")
+    file = CloudinaryField("file", blank=True, null=True)
+    file_url = models.URLField(blank=True, null=True)
 
 
 class Room(models.Model):
@@ -170,7 +171,7 @@ class Room(models.Model):
 
 
 class RoomImage(models.Model):
-    image = CloudinaryField("image")
+    image = CloudinaryField("image", null=True)
 
     room = models.ForeignKey(
         Room, on_delete=models.CASCADE, related_name="images", blank=True, null=True
@@ -206,7 +207,7 @@ class Bill(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    file = CloudinaryField("file")
+    file = CloudinaryField("file", null=True)
 
     class Meta:
         ordering = ["-date"]
@@ -249,7 +250,7 @@ class Inquiry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=20, choices=INQUIRY_TYPE_CHOICES)
     message = models.TextField()
-    image = CloudinaryField("image")
+    image = CloudinaryField("image", null=True)
 
     def __str__(self):
         return f"Inquiry #{self.id} about {self.apartment.address}"
