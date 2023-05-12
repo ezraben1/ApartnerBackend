@@ -12,6 +12,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     ".herokuapp.com",
     "apartnerbackend.herokuapp.com",
+    "http://localhost:3000",
 ]
 
 DATABASES = {

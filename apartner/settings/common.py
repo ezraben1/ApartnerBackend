@@ -103,7 +103,6 @@ WSGI_APPLICATION = "apartner.wsgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 import os
-import dj_database_url
 
 SECRET_KEY = "django-insecure-406_2can@1@=mpv&wtm5*00vfg3i3x6pi61nv5ab)2fv4o$c!i"
 
