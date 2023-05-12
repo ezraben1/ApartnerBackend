@@ -17,6 +17,8 @@ from django.contrib.auth import get_user_model
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    avatar = serializers.ImageField(max_length=None, use_url=True)
+
     class Meta:
         model = CustomUser
         fields = (
@@ -39,7 +41,13 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password")
+        avatar = validated_data.pop("avatar", None)
+
         user = CustomUser(**validated_data)
+
+        if avatar is not None:
+            user.avatar = avatar
+
         user.set_password(password)
         user.save()
         return user
