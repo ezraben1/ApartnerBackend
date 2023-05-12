@@ -55,6 +55,7 @@ class OwnerApartmentViewSet(ApartmentViewSet):
         apartment = self.get_object()
         if "image" in request.FILES:
             upload_result = upload(request.FILES["image"])
+            print(upload_result)  # Debug: print the upload result
             request.data["image"] = upload_result["url"]
 
         serializer = serializers.ApartmentImageSerializer(
@@ -99,6 +100,7 @@ class OwnerRoomViewSet(RoomViewSet):
         room = self.get_object()
         if "image" in request.FILES:
             upload_result = upload(request.FILES["image"])
+            print(upload_result)  # Debug: print the upload result
             request.data["image"] = upload_result["url"]
 
         serializer = serializers.ApartmentImageSerializer(
