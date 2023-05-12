@@ -374,7 +374,12 @@ class ContractViewSet(ModelViewSet):
     def perform_create(self, serializer):
         room_id = self.kwargs["room_id"]
         room = get_object_or_404(Room, id=room_id)
-        return serializer.save(owner=self.request.user, room=room)
+        contract = serializer.save(owner=self.request.user, room=room)
+        # If the file field is included in the request, save the file and update the contract model
+        if "file" in self.request.FILES:
+            contract.file = self.request.FILES["file"]
+            contract.save()
+        return contract
 
     @action(detail=True, methods=["get"], url_path="download")
     def download(self, request, *args, **kwargs):
