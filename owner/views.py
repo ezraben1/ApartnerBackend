@@ -7,6 +7,7 @@ from core.views import ApartmentViewSet, RoomViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
+from cloudinary.uploader import upload
 
 
 class OwnerApartmentViewSet(ApartmentViewSet):
@@ -52,6 +53,10 @@ class OwnerApartmentViewSet(ApartmentViewSet):
     )
     def upload_image(self, request, pk=None):
         apartment = self.get_object()
+        if "image" in request.FILES:
+            upload_result = upload(request.FILES["image"])
+            request.data["image"] = upload_result["url"]
+
         serializer = serializers.ApartmentImageSerializer(
             data=request.data, context={"apartment_id": apartment.id}
         )
@@ -92,7 +97,11 @@ class OwnerRoomViewSet(RoomViewSet):
     )
     def upload_image(self, request, pk=None):
         room = self.get_object()
-        serializer = serializers.RoomImageSerializer(
+        if "image" in request.FILES:
+            upload_result = upload(request.FILES["image"])
+            request.data["image"] = upload_result["url"]
+
+        serializer = serializers.ApartmentImageSerializer(
             data=request.data, context={"room_id": room.id}
         )
 

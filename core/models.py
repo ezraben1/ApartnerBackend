@@ -7,6 +7,7 @@ from .validators import validate_file_size
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.utils.translation import gettext as _
 from phonenumber_field.modelfields import PhoneNumberField
+from cloudinary.models import CloudinaryField
 
 
 class CustomUser(AbstractUser):
@@ -28,7 +29,7 @@ class CustomUser(AbstractUser):
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)
-    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
+    avatar = CloudinaryField("image")
     phone = PhoneNumberField(blank=True, null=True)
 
     age = models.PositiveIntegerField(blank=True, null=True)
@@ -104,13 +105,8 @@ class Apartment(models.Model):
 
 
 class ApartmentImage(models.Model):
-    image = models.ImageField(
-        upload_to="apartment_images/",
-        validators=[validate_file_size],
-        help_text=_("The image of the apartment."),
-        null=True,
-        blank=True,
-    )
+    image = CloudinaryField("image")
+
     apartment = models.ForeignKey(
         Apartment,
         on_delete=models.CASCADE,
@@ -135,7 +131,7 @@ class Contract(models.Model):
         max_digits=8, decimal_places=2, validators=[MinValueValidator(1)]
     )
     terms_and_conditions = models.TextField(blank=True, null=True)
-    file = models.FileField(upload_to="contracts/", blank=True, null=True)
+    file = CloudinaryField("file")
 
 
 class Room(models.Model):
@@ -174,13 +170,8 @@ class Room(models.Model):
 
 
 class RoomImage(models.Model):
-    image = models.ImageField(
-        upload_to="room_images/",
-        validators=[validate_file_size],
-        help_text=_("The image of the room."),
-        null=True,
-        blank=True,
-    )
+    image = CloudinaryField("image")
+
     room = models.ForeignKey(
         Room, on_delete=models.CASCADE, related_name="images", blank=True, null=True
     )
@@ -215,7 +206,7 @@ class Bill(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    file = models.FileField(upload_to="bill_files/", null=True, blank=True)
+    file = CloudinaryField("file")
 
     class Meta:
         ordering = ["-date"]
@@ -258,7 +249,7 @@ class Inquiry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=20, choices=INQUIRY_TYPE_CHOICES)
     message = models.TextField()
-    image = models.ImageField(upload_to="inquiry/", blank=True, null=True)
+    image = CloudinaryField("image")
 
     def __str__(self):
         return f"Inquiry #{self.id} about {self.apartment.address}"
