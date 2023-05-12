@@ -397,7 +397,7 @@ class ContractViewSet(ModelViewSet):
             response[
                 "Content-Disposition"
             ] = f"attachment; filename={os.path.basename(file_path)}"
-            return response
+            return redirect(contract.file)
         else:
             return Response(
                 {"error": "File not found."}, status=status.HTTP_404_NOT_FOUND
