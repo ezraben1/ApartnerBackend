@@ -36,10 +36,10 @@ import mimetypes
 from django.http import FileResponse
 from rest_framework import mixins, viewsets
 from django.db.models import Q
-from django.core.exceptions import ObjectDoesNotExist
 import cloudinary
 import requests
 from django.core.files.base import ContentFile
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 class ApartmentImageViewSet(ModelViewSet):
@@ -342,6 +342,7 @@ class ContractViewSet(ModelViewSet):
     queryset = Contract.objects.all()
     serializer_class = serializers.ContractSerializer
     permission_classes = [IsAuthenticated, IsApartmentOwner]
+    parser_classes = (MultiPartParser, FormParser)
 
     def get_queryset(self):
         user = self.request.user
