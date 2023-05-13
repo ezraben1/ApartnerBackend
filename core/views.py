@@ -37,6 +37,7 @@ from django.http import FileResponse
 from rest_framework import mixins, viewsets
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
+import cloudinary
 
 
 class ApartmentImageViewSet(ModelViewSet):
@@ -374,12 +375,7 @@ class ContractViewSet(ModelViewSet):
     def perform_create(self, serializer):
         room_id = self.kwargs["room_id"]
         room = get_object_or_404(Room, id=room_id)
-        contract = serializer.save(owner=self.request.user, room=room)
-        # If the file field is included in the request, save the file and update the contract model
-        if "file" in self.request.FILES:
-            contract.file = self.request.FILES["file"]
-            contract.save()
-        return contract
+        return serializer.save(owner=self.request.user, room=room)
 
     @action(detail=True, methods=["get"], url_path="download")
     def download(self, request, *args, **kwargs):
@@ -388,29 +384,21 @@ class ContractViewSet(ModelViewSet):
             return Response(
                 {"error": "No file available."}, status=status.HTTP_404_NOT_FOUND
             )
-
-        file_path = contract.file.path
-        if os.path.exists(file_path):
-            response = FileResponse(
-                open(file_path, "rb"), content_type="application/octet-stream"
-            )
-            response[
-                "Content-Disposition"
-            ] = f"attachment; filename={os.path.basename(file_path)}"
-            return redirect(contract.file)
-        else:
-            return Response(
-                {"error": "File not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+        return redirect(contract.file)
 
     @action(detail=True, methods=["delete"], url_path="delete-file")
-    def delete_file(
-        self, request, apartment_id=None, room_id=None, pk=None, *args, **kwargs
-    ):
+    def delete_file(self, request, *args, **kwargs):
         contract = self.get_object()
-        contract.file.delete()
-        contract.save()
-        return Response({"message": "File deleted successfully."})
+        if contract.file:
+            public_id = contract.file.split("/")[-1].split(".")[0]
+            cloudinary.uploader.destroy(public_id, resource_type="raw")
+            contract.file = None
+            contract.save()
+            return Response({"message": "File deleted successfully."})
+        else:
+            return Response(
+                {"error": "No file to delete."}, status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class BillViewSet(ModelViewSet):
