@@ -29,7 +29,7 @@ class CustomUser(AbstractUser):
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)
-    avatar = CloudinaryField("image", blank=True)
+    avatar = CloudinaryField("image", null=True)
     phone = PhoneNumberField(blank=True, null=True)
 
     age = models.PositiveIntegerField(blank=True, null=True)
@@ -131,7 +131,7 @@ class Contract(models.Model):
         max_digits=8, decimal_places=2, validators=[MinValueValidator(1)]
     )
     terms_and_conditions = models.TextField(blank=True, null=True)
-    file = CloudinaryField("file", blank=True)
+    file = CloudinaryField("file", blank=True, null=True)
 
 
 class Room(models.Model):
@@ -206,7 +206,7 @@ class Bill(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    file = CloudinaryField("file", blank=True)
+    file = CloudinaryField("file", blank=True, null=True)
 
     class Meta:
         ordering = ["-date"]
@@ -249,7 +249,7 @@ class Inquiry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=20, choices=INQUIRY_TYPE_CHOICES)
     message = models.TextField()
-    image = CloudinaryField("image", blank=True)
+    image = CloudinaryField("image", blank=True, null=True)
 
     def __str__(self):
         return f"Inquiry #{self.id} about {self.apartment.address}"

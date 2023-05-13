@@ -54,8 +54,11 @@ class CustomUserSerializer(serializers.ModelSerializer):
         return user
 
 
+from django.utils import timezone
+
+
 class BillSerializer(serializers.ModelSerializer):
-    file = serializers.ImageField(max_length=None, use_url=True, required=False)
+    file = serializers.FileField(max_length=None, use_url=True, required=False)
 
     class Meta:
         model = Bill
@@ -83,6 +86,41 @@ class BillSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Date cannot be in the future.")
 
         return data
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data["file"] and not data["file"].endswith(".pdf"):
+            data["file"] += ".pdf"
+        return data
+
+    def create(self, validated_data):
+        file = validated_data.pop("file", None)
+
+        if file:
+            upload_result = upload(file, resource_type="raw")
+            validated_data["file"] = upload_result["url"]
+
+        bill = Bill.objects.create(**validated_data)
+
+        return bill
+
+    def update(self, instance, validated_data):
+        file = validated_data.get("file", None)
+
+        if file:
+            if instance.file:
+                public_id = instance.file.public_id
+                cloudinary.uploader.destroy(public_id, resource_type="raw")
+
+            upload_result = upload(file, resource_type="raw")
+            validated_data["file"] = upload_result["url"]
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+
+        instance.save()
+
+        return instance
 
 
 class ApartmentImageSerializer(serializers.ModelSerializer):
@@ -168,13 +206,17 @@ class ContractSerializer(serializers.ModelSerializer):
             return obj.file.url + ".pdf"
         return obj.file.url
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data["file"] and not data["file"].endswith(".pdf"):
+            data["file"] += ".pdf"
+        return data
+
     def create(self, validated_data):
         file = validated_data.pop("file", None)
 
         if file:
-            upload_result = upload(
-                file, public_id=file.name.split(".")[0], resource_type="raw"
-            )
+            upload_result = upload(file, resource_type="raw")
             validated_data["file"] = upload_result["url"]
 
         contract = Contract.objects.create(**validated_data)
@@ -186,12 +228,10 @@ class ContractSerializer(serializers.ModelSerializer):
 
         if file:
             if instance.file:
-                public_id = instance.file.split("/")[-1].split(".")[0]
+                public_id = instance.file.public_id
                 cloudinary.uploader.destroy(public_id, resource_type="raw")
 
-            upload_result = upload(
-                file, public_id=file.name.split(".")[0], resource_type="raw"
-            )
+            upload_result = upload(file, resource_type="raw")
             validated_data["file"] = upload_result["url"]
 
         for key, value in validated_data.items():

@@ -29,7 +29,7 @@ from core.permissions import (
 from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 import os
 import mimetypes
@@ -387,13 +387,25 @@ class ContractViewSet(ModelViewSet):
             return Response(
                 {"error": "No file available."}, status=status.HTTP_404_NOT_FOUND
             )
-        return Response({"file_url": contract.file})
+        file_url = contract.file.url
+        if not file_url.endswith(".pdf"):
+            file_url += ".pdf"
+
+        try:
+            file_response = FileResponse(requests.get(file_url, stream=True))
+            file_response["Content-Disposition"] = 'attachment; filename="contract.pdf"'
+            return file_response
+        except requests.exceptions.RequestException as e:
+            return Response(
+                {"error": "Failed to download the file."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     @action(detail=True, methods=["delete"], url_path="delete-file")
     def delete_file(self, request, *args, **kwargs):
         contract = self.get_object()
         if contract.file:
-            public_id = contract.file.split("/")[-1].split(".")[0]
+            public_id = contract.file.public_id
             cloudinary.uploader.destroy(public_id, resource_type="raw")
             contract.file = None
             contract.save()
@@ -437,30 +449,37 @@ class BillViewSet(ModelViewSet):
         return apartment
 
     @action(detail=True, methods=["get"])
-    def download(self, request, apartment_id=None, bill_id=None):
-        bill = get_object_or_404(Bill, id=bill_id, apartment_id=apartment_id)
-        file_path = os.path.join(settings.MEDIA_ROOT, str(bill.file))
-        if os.path.exists(file_path):
-            content_type, encoding = mimetypes.guess_type(file_path)
-            content_type = content_type or "application/octet-stream"
-            with open(file_path, "rb") as fh:
-                response = HttpResponse(fh.read(), content_type=content_type)
-                response[
-                    "Content-Disposition"
-                ] = f"attachment; filename={os.path.basename(file_path)}"
-                if encoding:
-                    response["Content-Encoding"] = encoding
-                return response
-        return Response(
-            {"message": "File not found."}, status=status.HTTP_404_NOT_FOUND
-        )
+    def download(self, request, apartment_id=None, bill_id=None, *args, **kwargs):
+        bill = self.get_object()
+        if not bill.file:
+            return Response(
+                {"error": "No file available."}, status=status.HTTP_404_NOT_FOUND
+            )
+        file_url = bill.file.url
+        if not file_url.endswith(".pdf"):
+            file_url += ".pdf"
+
+        try:
+            file_response = FileResponse(requests.get(file_url, stream=True))
+            file_response["Content-Disposition"] = 'attachment; filename="bill.pdf"'
+            return file_response
+        except requests.exceptions.RequestException as e:
+            return Response(
+                {"error": "Failed to download the file."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     @action(detail=True, methods=["delete"], url_path="delete-file")
-    def delete_file(self, request, apartment_id=None, bill_id=None, *args, **kwargs):
+    def delete_file(self, request, *args, **kwargs):
         bill = self.get_object()
-        bill.file.delete()
-        bill.save()
-        return Response({"message": "File deleted successfully."})
+        if bill.file:
+            public_id = bill.file.public_id
+            cloudinary.uploader.destroy(public_id, resource_type="raw")
+            bill.file = None
+            bill.save()
+            return Response({"message": "File deleted successfully."})
+        else:
+            return Response({"message": "No file to delete."})
 
 
 class ReviewViewSet(ModelViewSet):

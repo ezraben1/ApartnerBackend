@@ -123,11 +123,6 @@ urlpatterns = [
         name="bill-upload-file",
     ),
     path(
-        "owner-apartments/<int:apartment_id>/bills/<int:bill_id>/download/",
-        BillViewSet.as_view({"get": "download"}),
-        name="bill-download-file",
-    ),
-    path(
         "owner-rooms/<int:room_id>/contracts/<int:pk>/",
         ContractViewSet.as_view(
             {
@@ -155,13 +150,23 @@ urlpatterns = [
     ),
     path(
         "owner-apartments/<int:apartment_id>/bills/<int:pk>/delete-file/",
-        BillViewSet.as_view({"delete": "delete_file"}),
+        BillViewSet.as_view({"delete": "delete_file", "get": "delete_file"}),
         name="delete_bill_file",
     ),
     path(
+        "owner-apartments/<int:apartment_id>/bills/<int:pk>/download/",
+        BillViewSet.as_view({"get": "download"}),
+        name="bill-download-file",
+    ),
+    path(
         "owner-apartments/<int:apartment_id>/room/<int:room_id>/contracts/<int:pk>/delete-file/",
-        ContractViewSet.as_view({"delete": "delete_file"}),
+        ContractViewSet.as_view({"delete": "delete_file", "get": "delete_file"}),
         name="delete_contract_file",
+    ),
+    path(
+        "owner-apartments/<int:apartment_id>/room/<int:room_id>/contracts/<int:pk>/download/",
+        ContractViewSet.as_view({"get": "download"}),
+        name="download_contract_file",
     ),
     path(
         "owner-apartments/<int:apartment_id>/images/",
