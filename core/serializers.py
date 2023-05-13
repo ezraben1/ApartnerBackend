@@ -143,7 +143,7 @@ class ApartmentSerializer(serializers.ModelSerializer):
 
 
 class ContractSerializer(serializers.ModelSerializer):
-    file = serializers.FileField(required=False, max_length=None, use_url=True)
+    file = serializers.SerializerMethodField()
 
     room_id = serializers.IntegerField(source="room.id", read_only=True)
     apartment_id = serializers.PrimaryKeyRelatedField(
@@ -164,9 +164,9 @@ class ContractSerializer(serializers.ModelSerializer):
         ]
 
     def get_file(self, obj):
-        if obj.file and not obj.file.endswith(".pdf"):
-            return obj.file + ".pdf"
-        return obj.file
+        if obj.file and not obj.file.url.endswith(".pdf"):
+            return obj.file.url + ".pdf"
+        return obj.file.url
 
     def create(self, validated_data):
         file = validated_data.pop("file", None)
