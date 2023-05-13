@@ -387,18 +387,10 @@ class ContractViewSet(ModelViewSet):
             return Response(
                 {"error": "No file available."}, status=status.HTTP_404_NOT_FOUND
             )
-
-        # Get the file from Cloudinary and create a response
         file_url = contract.file
-        response = requests.get(file_url, stream=True)
-        if response.status_code != 200:
-            return Response(
-                {"error": "File not found on server."}, status=status.HTTP_404_NOT_FOUND
-            )
-        content = ContentFile(response.content)
-        file_name = os.path.basename(contract.file)
-        response = FileResponse(content, as_attachment=True, filename=file_name)
-        return response
+        if file_url.endswith(".pdf"):
+            file_url = file_url + ".pdf"
+        return Response({"file_url": file_url})
 
     @action(detail=True, methods=["delete"], url_path="delete-file")
     def delete_file(self, request, *args, **kwargs):
