@@ -163,11 +163,15 @@ class ContractSerializer(serializers.ModelSerializer):
             "file",
         ]
 
+    def get_file(self, obj):
+        if obj.file and not obj.file.endswith(".pdf"):
+            return obj.file + ".pdf"
+        return obj.file
+
     def create(self, validated_data):
         file = validated_data.pop("file", None)
 
         if file:
-            # Upload file to Cloudinary and get the public URL
             upload_result = upload(file, resource_type="raw")
             validated_data["file"] = upload_result["url"]
 
@@ -179,12 +183,10 @@ class ContractSerializer(serializers.ModelSerializer):
         file = validated_data.get("file", None)
 
         if file:
-            # Delete the old file from Cloudinary before uploading the new one
             if instance.file:
                 public_id = instance.file.split("/")[-1].split(".")[0]
                 cloudinary.uploader.destroy(public_id, resource_type="raw")
 
-            # Upload file to Cloudinary and get the public URL
             upload_result = upload(file, resource_type="raw")
             validated_data["file"] = upload_result["url"]
 

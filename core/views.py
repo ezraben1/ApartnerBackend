@@ -38,6 +38,8 @@ from rest_framework import mixins, viewsets
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
 import cloudinary
+import requests
+from django.core.files.base import ContentFile
 
 
 class ApartmentImageViewSet(ModelViewSet):
@@ -436,30 +438,36 @@ class BillViewSet(ModelViewSet):
         return apartment
 
     @action(detail=True, methods=["get"])
-    def download(self, request, apartment_id=None, bill_id=None):
-        bill = get_object_or_404(Bill, id=bill_id, apartment_id=apartment_id)
-        file_path = os.path.join(settings.MEDIA_ROOT, str(bill.file))
-        if os.path.exists(file_path):
-            content_type, encoding = mimetypes.guess_type(file_path)
-            content_type = content_type or "application/octet-stream"
-            with open(file_path, "rb") as fh:
-                response = HttpResponse(fh.read(), content_type=content_type)
-                response[
-                    "Content-Disposition"
-                ] = f"attachment; filename={os.path.basename(file_path)}"
-                if encoding:
-                    response["Content-Encoding"] = encoding
-                return response
-        return Response(
-            {"message": "File not found."}, status=status.HTTP_404_NOT_FOUND
-        )
+    def download(self, request, *args, **kwargs):
+        contract = self.get_object()
+        if not contract.file:
+            return Response(
+                {"error": "No file available."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Get the file from Cloudinary and create a response
+        file_url = contract.file
+        response = requests.get(file_url, stream=True)
+        if response.status_code != 200:
+            return Response(
+                {"error": "File not found on server."}, status=status.HTTP_404_NOT_FOUND
+            )
+        content = ContentFile(response.content)
+        file_name = os.path.basename(contract.file)
+        response = FileResponse(content, as_attachment=True, filename=file_name)
+        return response
 
     @action(detail=True, methods=["delete"], url_path="delete-file")
-    def delete_file(self, request, apartment_id=None, bill_id=None, *args, **kwargs):
-        bill = self.get_object()
-        bill.file.delete()
-        bill.save()
-        return Response({"message": "File deleted successfully."})
+    def delete_file(self, request, *args, **kwargs):
+        contract = self.get_object()
+        if contract.file:
+            public_id = contract.file.split("/")[-1].split(".")[0]
+            cloudinary.uploader.destroy(public_id, resource_type="raw")
+            contract.file = None
+            contract.save()
+            return Response({"message": "File deleted successfully."})
+        else:
+            return Response({"message": "No file to delete."})
 
 
 class ReviewViewSet(ModelViewSet):
