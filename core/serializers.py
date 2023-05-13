@@ -172,7 +172,9 @@ class ContractSerializer(serializers.ModelSerializer):
         file = validated_data.pop("file", None)
 
         if file:
-            upload_result = upload(file, resource_type="raw")
+            upload_result = upload(
+                file, public_id=file.name.split(".")[0], resource_type="raw"
+            )
             validated_data["file"] = upload_result["url"]
 
         contract = Contract.objects.create(**validated_data)
@@ -187,7 +189,9 @@ class ContractSerializer(serializers.ModelSerializer):
                 public_id = instance.file.split("/")[-1].split(".")[0]
                 cloudinary.uploader.destroy(public_id, resource_type="raw")
 
-            upload_result = upload(file, resource_type="raw")
+            upload_result = upload(
+                file, public_id=file.name.split(".")[0], resource_type="raw"
+            )
             validated_data["file"] = upload_result["url"]
 
         for key, value in validated_data.items():
@@ -196,6 +200,11 @@ class ContractSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+    def validate_file(self, value):
+        if not value.name.endswith(".pdf"):
+            raise serializers.ValidationError("Only PDF files are allowed.")
+        return value
 
 
 class RoomImageSerializer(serializers.ModelSerializer):
