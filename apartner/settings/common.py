@@ -218,9 +218,3 @@ DEFAULT_FROM_EMAIL = "admin@admin.com"
 ADMINS = [("admin", "admin@admin.com")]
 
 LOGIN_REDIRECT_URL = "/home/"
-
-cloudinary.config(
-    cloud_name=os.getenv("CLOUD_NAME"),
-    api_key=os.getenv("API_KEY"),
-    api_secret=os.getenv("API_SECRET"),
-)
