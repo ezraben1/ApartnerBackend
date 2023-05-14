@@ -36,8 +36,12 @@ class CustomUser(AbstractUser):
     gender = models.CharField(max_length=10, blank=True, default="")
     bio = models.TextField(blank=True, default="")
 
-    preferred_location = models.CharField(max_length=100, blank=True, default="")
-    preferred_roommates = models.CharField(max_length=100, blank=True, default="")
+    preferred_location = models.CharField(
+        max_length=100, blank=True, null=True, default=""
+    )
+    preferred_roommates = models.CharField(
+        max_length=100, blank=True, null=True, default=""
+    )
     preferred_rent = models.PositiveIntegerField(blank=True, null=True)
 
 
