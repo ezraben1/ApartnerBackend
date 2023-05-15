@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a46d44783c005329196103db88d2240fcbbe4f03bfae4cdde246aa5ebd05034d"
+            "sha256": "4c8a1e7889c801f1b694d556e16976892672398b7676c0cfb80ff62980e9d250"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -201,10 +201,10 @@
         },
         "cloudinary": {
             "hashes": [
-                "sha256:26d664a58347908defc1b65584dcdf6cedc0c761a66972e7fddf6183353dfa96"
+                "sha256:19d1b90dc01078ecd768d9094a9084899ad94a792d52426133edca946487f9ca"
             ],
             "index": "pypi",
-            "version": "==1.32.0"
+            "version": "==1.33.0"
         },
         "coreapi": {
             "hashes": [
@@ -381,6 +381,14 @@
             ],
             "index": "pypi",
             "version": "==20.1.0"
+        },
+        "hellosign-python-sdk": {
+            "hashes": [
+                "sha256:b75fece1439270b10c7f1f4d1e172801517d588d7052fc8bba384d7c6d056ef4",
+                "sha256:c455d73c58f72fda27cc315ddbe3a6a85eff0f7b8d59d1d5b73c364c812b33de"
+            ],
+            "index": "pypi",
+            "version": "==4.0.0"
         },
         "idna": {
             "hashes": [
