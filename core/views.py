@@ -1,3 +1,6 @@
+import base64
+from http import client
+import json
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from .models import (
@@ -29,17 +32,18 @@ from core.permissions import (
 from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
-import os
-import mimetypes
 from django.http import FileResponse
 from rest_framework import mixins, viewsets
 from django.db.models import Q
 import cloudinary
 import requests
-from django.core.files.base import ContentFile
 from rest_framework.parsers import MultiPartParser, FormParser
+from hellosign_sdk import HSClient
+
+from django.http import JsonResponse
+from django.views import View
+from rest_framework.decorators import api_view, permission_classes
 
 
 class ApartmentImageViewSet(ModelViewSet):
@@ -343,6 +347,32 @@ class ContractViewSet(ModelViewSet):
     serializer_class = serializers.ContractSerializer
     permission_classes = [IsAuthenticated, IsApartmentOwner]
     parser_classes = (MultiPartParser, FormParser)
+    client = HSClient(
+        api_key="<c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d>"
+    )
+
+    @action(detail=True, methods=["post"], url_path="send-for-signing")
+    def send_for_signing(self, request, *args, **kwargs):
+        contract = self.get_object()
+
+        # Define the signer
+        signer_email = request.data.get("email")
+        signer_name = request.data.get("name")
+
+        # Create a new signature request
+        response = client.send_signature_request(
+            test_mode=True,
+            title="Sign Contract",
+            subject="The contract for your new apartment is ready for signature",
+            message="Please sign this contract to confirm your agreement",
+            signers=[{"email_address": signer_email, "name": signer_name}],
+            files=[
+                contract.file.path
+            ],  # Assuming 'file' is a FileField on your Contract model
+        )
+
+        # Return the response from HelloSign
+        return Response(response.json_data)
 
     def get_queryset(self):
         user = self.request.user
@@ -617,3 +647,13 @@ class InquiryReplyViewSet(
         inquiry_id = self.kwargs.get("pk")
         inquiry = Inquiry.objects.get(pk=inquiry_id)
         serializer.save(inquiry=inquiry, sender=self.request.user)
+
+
+class HelloSignCallbackView(View):
+    def post(self, request, *args, **kwargs):
+        # The actual event data is in request.body. You can parse it with:
+        event_data = json.loads(request.body)
+        # Now you can do something with the event_data, like update your database or send a notification.
+
+        # After you have processed the event, return a 200 OK response.
+        return JsonResponse({"message": "Received"}, status=200)
