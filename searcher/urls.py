@@ -32,19 +32,19 @@ urlpatterns = [
         name="room-contracts",
     ),
     path(
-        "searcher-search/<int:apartment_id>/room/<int:pk>/sign-contract/",
-        RoomViewSet.as_view({"post": "sign_contract"}),
-        name="room-sign-contract",
-    ),
-    path(
         "searcher-search/<int:room_id>/contract/",
-        SearcherContractViewSet.as_view({"get": "retrieve"}),
-        name="contract",
+        SearcherContractViewSet.as_view({"get": "list"}),
+        name="contract-list",
     ),
     path(
         "searcher-search/<int:room_id>/contract/<int:pk>/",
         SearcherContractViewSet.as_view({"get": "retrieve"}),
         name="contract-detail",
+    ),
+    path(
+        "searcher-search/<int:room_id>/contract/<int:pk>/send-for-signing",
+        SearcherContractViewSet.as_view({"post": "send_for_signing"}),
+        name="contract-sign",
     ),
     path(
         "searcher-search/<int:room_id>/contract/<int:pk>/download/",

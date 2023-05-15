@@ -75,6 +75,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://apartnerfrontend.herokuapp.com",
 ]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
 
 ROOT_URLCONF = "apartner.urls"

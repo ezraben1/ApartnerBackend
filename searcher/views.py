@@ -13,6 +13,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework import status
 from core.permissions import IsAuthenticated, IsSearcher
+from core.views import ContractViewSet
 
 from searcher.serializers import SearcherRoomSerializer
 
@@ -53,7 +54,7 @@ class SearcherRoomViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
-class SearcherContractViewSet(viewsets.ReadOnlyModelViewSet):
+class SearcherContractViewSet(ContractViewSet):
     serializer_class = serializers.ContractSerializer
     permission_classes = [IsAuthenticated]
 
@@ -61,38 +62,17 @@ class SearcherContractViewSet(viewsets.ReadOnlyModelViewSet):
         user = self.request.user
         if user.is_authenticated and user.user_type == "searcher":
             try:
-                room_id = self.kwargs["room_id"]
-                contract_id = self.kwargs["pk"]
-                contract = Contract.objects.select_related("room__apartment").get(
-                    id=contract_id,
-                    room__id=room_id,
-                )
+                room_id = self.kwargs.get("room_id")
+                contract_id = self.kwargs.get("pk")
+                if contract_id is not None:
+                    contract = Contract.objects.select_related("room__apartment").get(
+                        id=contract_id,
+                        room__id=room_id,
+                    )
+                    return Contract.objects.filter(id=contract.id)
+                else:
+                    return Contract.objects.filter(room__id=room_id)
             except Contract.DoesNotExist:
                 raise Http404
-            return Contract.objects.filter(id=contract.id)
         else:
             return Contract.objects.none()
-
-    @action(detail=True, methods=["get"], url_path="download")
-    def download(self, request, *args, **kwargs):
-        contract = self.get_object()
-        if not contract.file:
-            return Response(
-                {"error": "No file available."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        file_path = contract.file.path
-        if os.path.exists(file_path):
-            response = FileResponse(
-                open(file_path, "rb"), content_type="application/octet-stream"
-            )
-            response[
-                "Content-Disposition"
-            ] = f"attachment; filename={os.path.basename(file_path)}"
-            return response
-        else:
-            return Response(
-                {"error": "File not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )

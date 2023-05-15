@@ -1,7 +1,6 @@
-import base64
-from http import client
 import json
 from django_filters.rest_framework import DjangoFilterBackend
+import hellosign_sdk
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from .models import (
     ApartmentImage,
@@ -40,10 +39,11 @@ import cloudinary
 import requests
 from rest_framework.parsers import MultiPartParser, FormParser
 from hellosign_sdk import HSClient
-
+import requests
+import tempfile
 from django.http import JsonResponse
 from django.views import View
-from rest_framework.decorators import api_view, permission_classes
+from hellosign_sdk.utils.exception import HSException
 
 
 class ApartmentImageViewSet(ModelViewSet):
@@ -348,31 +348,48 @@ class ContractViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsApartmentOwner]
     parser_classes = (MultiPartParser, FormParser)
     client = HSClient(
-        api_key="<c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d>"
+        api_key="c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d"
     )
 
     @action(detail=True, methods=["post"], url_path="send-for-signing")
     def send_for_signing(self, request, *args, **kwargs):
+        client = HSClient(
+            api_key="c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d"
+        )
         contract = self.get_object()
 
         # Define the signer
-        signer_email = request.data.get("email")
-        signer_name = request.data.get("name")
+        user = self.request.user
+        signer_email = user.email
+        signer_name = user.first_name + " " + user.last_name
+
+        # Download the file from Cloudinary
+        response = requests.get(contract.file.url, stream=True)
+
+        # Save the file to a temporary location
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:  # filter out keep-alive new chunks
+                    temp_file.write(chunk)
 
         # Create a new signature request
-        response = client.send_signature_request(
+        signature_request = client.send_signature_request(
             test_mode=True,
             title="Sign Contract",
             subject="The contract for your new apartment is ready for signature",
             message="Please sign this contract to confirm your agreement",
             signers=[{"email_address": signer_email, "name": signer_name}],
-            files=[
-                contract.file.path
-            ],  # Assuming 'file' is a FileField on your Contract model
+            files=[temp_file.name],
         )
 
+        # Check if the request was successful
+        if signature_request is not None:
+            signature_request_id = signature_request.signature_request_id
+        else:
+            print("Failed to send signature request")
+
         # Return the response from HelloSign
-        return Response(response.json_data)
+        return Response({"signature_request_id": signature_request_id})
 
     def get_queryset(self):
         user = self.request.user
