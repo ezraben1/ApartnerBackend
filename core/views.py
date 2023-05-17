@@ -348,8 +348,11 @@ class CustomUserViewSet(ModelViewSet):
 def hellosign_webhook(request):
     try:
         if request.method == "POST":
-            # Extract the event from the POST data
-            event = json.loads(request.POST.get("event", ""))
+            # Extract the event from the request body
+            body_unicode = request.body.decode("utf-8")
+            body_data = json.loads(body_unicode)
+            event = body_data.get("event", {})
+
             event_type = event.get("event_type")
 
             # Return the event hash to confirm receipt
