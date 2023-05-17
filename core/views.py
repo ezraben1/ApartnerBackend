@@ -1,4 +1,5 @@
 import json
+import traceback
 from django_filters.rest_framework import DjangoFilterBackend
 import hellosign_sdk
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -345,46 +346,55 @@ class CustomUserViewSet(ModelViewSet):
 
 @csrf_exempt
 def hellosign_webhook(request):
-    if request.method == "POST":
-        # Extract the event from the POST data
-        event = json.loads(request.body)["event"]
-        event_type = event.get("event_type")
+    try:
+        if request.method == "POST":
+            # Extract the event from the POST data
+            event = json.loads(request.body)["event"]
+            event_type = event.get("event_type")
 
-        # Return the event hash to confirm receipt
-        if event_type == "callback_test":
-            return JsonResponse({"received": event["event_hash"]})
+            # Return the event hash to confirm receipt
+            if event_type == "callback_test":
+                return JsonResponse({"received": event["event_hash"]})
 
-        if event_type == "signature_request_all_signed":
-            signature_request_id = event["signature_request"]["signature_request_id"]
+            if event_type == "signature_request_all_signed":
+                signature_request_id = event["signature_request"][
+                    "signature_request_id"
+                ]
 
-            client = HSClient(api_key="your_api_key")
-            details = client.get_signature_request(signature_request_id)
+                client = HSClient(api_key="your_api_key")
+                details = client.get_signature_request(signature_request_id)
 
-            # Get the signed document URL
-            signed_document_url = details.signature_request.files_url
+                # Get the signed document URL
+                signed_document_url = details.signature_request.files_url
 
-            # Download the signed document
-            response = requests.get(signed_document_url, stream=True)
-            with open("signed_document.pdf", "wb") as f:
-                f.write(response.content)
+                # Download the signed document
+                response = requests.get(signed_document_url, stream=True)
+                with open("signed_document.pdf", "wb") as f:
+                    f.write(response.content)
 
-            # Upload the signed document to Cloudinary
-            cloudinary.config(
-                cloud_name="dnis06cto",
-                api_key="419768594117284",
-                api_secret="zexmum1c5fbT8",
-            )
-            upload_response = cloudinary.uploader.upload("signed_document.pdf")
+                # Upload the signed document to Cloudinary
+                cloudinary.config(
+                    cloud_name="dnis06cto",
+                    api_key="419768594117284",
+                    api_secret="zexmum1c5fbT8",
+                )
+                upload_response = cloudinary.uploader.upload("signed_document.pdf")
 
-            # Retrieve the related contract and update the file field with the new URL
-            contract = Contract.objects.get(signature_request_id=signature_request_id)
-            contract.file = upload_response["url"]
-            contract.save()
+                # Retrieve the related contract and update the file field with the new URL
+                contract = Contract.objects.get(
+                    signature_request_id=signature_request_id
+                )
+                contract.file = upload_response["url"]
+                contract.save()
 
-            return JsonResponse({"status": "ok"})
+                return JsonResponse({"status": "ok"})
+        else:
+            return JsonResponse({"error": "Invalid request"}, status=400)
 
-    else:
-        return JsonResponse({"error": "Invalid request"}, status=400)
+    except Exception as e:
+        print("Exception in hellosign_webhook:")
+        traceback.print_exc()
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 class ContractViewSet(ModelViewSet):
