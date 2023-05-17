@@ -21,7 +21,6 @@ import debug_toolbar
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_nested import routers
 
-from core.views import HelloSignCallbackView
 
 admin.site.site_header = "Apartner Admin"
 admin.site.index_title = "Admin"
@@ -47,11 +46,6 @@ urlpatterns = [
     path("__debug__/", include(debug_toolbar.urls)),
     path("auth/token/", TokenObtainPairView.as_view(), name="token_create"),
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path(
-        "hellosign-callback/",
-        HelloSignCallbackView.as_view(),
-        name="hellosign_callback",
-    ),
 ]
 
 if settings.DEBUG:
