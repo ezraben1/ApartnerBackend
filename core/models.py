@@ -136,6 +136,7 @@ class Contract(models.Model):
     )
     terms_and_conditions = models.TextField(blank=True, null=True)
     file = CloudinaryField("file", blank=True, null=True)
+    signature_request_id = models.CharField(max_length=255, blank=True, null=True)
 
 
 class Room(models.Model):

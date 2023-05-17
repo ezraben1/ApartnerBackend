@@ -14,5 +14,7 @@ custom_router.register(
     basename="inquiry-reply",
 )
 
-urlpatterns = []
+urlpatterns = [
+    path("hellosign_webhook/", views.hellosign_webhook, name="hellosign_webhook"),
+]
 urlpatterns += custom_router.urls

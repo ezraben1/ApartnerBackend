@@ -16,8 +16,8 @@ DATABASES = {
     }
 }
 # dev server
-# cloudinary.config(
-#     cloud_name=("dnis06cto"),
-#     api_key=("419768594117284"),
-#     api_secret=("zexmum1c5fbT8-959jXEb1VQj2w"),
-# )
+cloudinary.config(
+    cloud_name=("dnis06cto"),
+    api_key=("419768594117284"),
+    api_secret=("zexmum1c5fbT8-959jXEb1VQj2w"),
+)

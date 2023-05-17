@@ -44,6 +44,7 @@ import tempfile
 from django.http import JsonResponse
 from django.views import View
 from hellosign_sdk.utils.exception import HSException
+from django.views.decorators.csrf import csrf_exempt
 
 
 class ApartmentImageViewSet(ModelViewSet):
@@ -342,6 +343,44 @@ class CustomUserViewSet(ModelViewSet):
         return Response(serializer.data)
 
 
+@csrf_exempt
+def hellosign_webhook(request):
+    if request.method == "POST":
+        event = request.POST.get("event", {})
+        event_type = event.get("event_type")
+        if event_type == "signature_request_all_signed":
+            signature_request_id = event["signature_request"]["signature_request_id"]
+
+            client = HSClient(api_key="your_api_key")
+            details = client.get_signature_request(signature_request_id)
+
+            # Get the signed document URL
+            signed_document_url = details.signature_request.files_url
+
+            # Download the signed document
+            response = requests.get(signed_document_url, stream=True)
+            with open("signed_document.pdf", "wb") as f:
+                f.write(response.content)
+
+            # Upload the signed document to Cloudinary
+            cloudinary.config(
+                cloud_name="dnis06cto",
+                api_key="419768594117284",
+                api_secret="zexmum1c5fbT8",
+            )
+            upload_response = cloudinary.uploader.upload("signed_document.pdf")
+
+            # Retrieve the related contract and update the file field with the new URL
+            contract = Contract.objects.get(signature_request_id=signature_request_id)
+            contract.file = upload_response["url"]
+            contract.save()
+
+        return JsonResponse({"status": "ok"})
+
+    else:
+        return JsonResponse({"error": "Invalid request"}, status=400)
+
+
 class ContractViewSet(ModelViewSet):
     queryset = Contract.objects.all()
     serializer_class = serializers.ContractSerializer
@@ -372,7 +411,7 @@ class ContractViewSet(ModelViewSet):
                 if chunk:  # filter out keep-alive new chunks
                     temp_file.write(chunk)
 
-        # Create a new signature request
+            # Create a new signature request
         signature_request = client.send_signature_request(
             test_mode=True,
             title="Sign Contract",
@@ -385,6 +424,19 @@ class ContractViewSet(ModelViewSet):
         # Check if the request was successful
         if signature_request is not None:
             signature_request_id = signature_request.signature_request_id
+
+            # Store the signature_request_id in your Contract model
+            contract.signature_request_id = signature_request_id
+            contract.save()
+
+            # If successful, update user type and Room's renter
+            user.user_type = "renter"  # update user type to Renter
+            user.save()
+
+            room = Room.objects.get(contract=contract)
+            room.renter = user  # Set the Room's renter to the new renter
+            room.save()
+
         else:
             print("Failed to send signature request")
 
