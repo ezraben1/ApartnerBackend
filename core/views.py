@@ -346,8 +346,14 @@ class CustomUserViewSet(ModelViewSet):
 @csrf_exempt
 def hellosign_webhook(request):
     if request.method == "POST":
-        event = request.POST.get("event", {})
+        # Extract the event from the POST data
+        event = json.loads(request.body)["event"]
         event_type = event.get("event_type")
+
+        # Return the event hash to confirm receipt
+        if event_type == "callback_test":
+            return JsonResponse({"received": event["event_hash"]})
+
         if event_type == "signature_request_all_signed":
             signature_request_id = event["signature_request"]["signature_request_id"]
 
@@ -375,7 +381,7 @@ def hellosign_webhook(request):
             contract.file = upload_response["url"]
             contract.save()
 
-        return JsonResponse({"status": "ok"})
+            return JsonResponse({"status": "ok"})
 
     else:
         return JsonResponse({"error": "Invalid request"}, status=400)
@@ -716,13 +722,3 @@ class InquiryReplyViewSet(
         inquiry_id = self.kwargs.get("pk")
         inquiry = Inquiry.objects.get(pk=inquiry_id)
         serializer.save(inquiry=inquiry, sender=self.request.user)
-
-
-class HelloSignCallbackView(View):
-    def post(self, request, *args, **kwargs):
-        # The actual event data is in request.body. You can parse it with:
-        event_data = json.loads(request.body)
-        # Now you can do something with the event_data, like update your database or send a notification.
-
-        # After you have processed the event, return a 200 OK response.
-        return JsonResponse({"message": "Received"}, status=200)
