@@ -349,7 +349,7 @@ def hellosign_webhook(request):
     try:
         if request.method == "POST":
             # Extract the event from the POST data
-            event = json.loads(request.body)["event"]
+            event = json.loads(request.POST.get("event", {}))
             event_type = event.get("event_type")
 
             # Return the event hash to confirm receipt
