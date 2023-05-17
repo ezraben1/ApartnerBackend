@@ -361,7 +361,9 @@ def hellosign_webhook(request):
                     "signature_request_id"
                 ]
 
-                client = HSClient(api_key="your_api_key")
+                client = HSClient(
+                    api_key="c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d"
+                )
                 details = client.get_signature_request(signature_request_id)
 
                 # Get the signed document URL
