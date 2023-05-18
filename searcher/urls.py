@@ -26,11 +26,6 @@ urlpatterns = [
         name="searcher-inquiries",
     ),
     path(
-        "searcher-search/<int:apartment_id>/room/<int:pk>/contracts/",
-        RoomViewSet.as_view({"get": "contracts"}),
-        name="room-contracts",
-    ),
-    path(
         "searcher-search/<int:room_id>/contract/",
         SearcherContractViewSet.as_view({"get": "list"}),
         name="contract-list",

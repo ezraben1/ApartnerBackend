@@ -1,9 +1,43 @@
-from core.models import Room
-from core.serializers import ApartmentSerializer, RoomSerializer
+from core.models import Apartment, Room
+from core.serializers import (
+    ApartmentImageSerializer,
+    RoomSerializer,
+)
+from rest_framework import serializers
+
+
+class SearcherApartmentSerializer(serializers.ModelSerializer):
+    owner = serializers.ReadOnlyField(source="owner.email")
+    images = ApartmentImageSerializer(many=True, read_only=True)
+
+    def get_bill_ids(self, obj):
+        bills = obj.bills.only("id")
+        return [bill.id for bill in bills]
+
+    class Meta:
+        model = Apartment
+        fields = [
+            "id",
+            "owner",
+            "address",
+            "city",
+            "street",
+            "building_number",
+            "apartment_number",
+            "floor",
+            "description",
+            "size",
+            "balcony",
+            "bbq_allowed",
+            "smoking_allowed",
+            "allowed_pets",
+            "ac",
+            "images",
+        ]
 
 
 class SearcherRoomSerializer(RoomSerializer):
-    apartment = ApartmentSerializer()
+    apartment = SearcherApartmentSerializer(read_only=True)
 
     class Meta:
         model = Room
@@ -13,11 +47,11 @@ class SearcherRoomSerializer(RoomSerializer):
             "size",
             "price_per_month",
             "window",
-            "images",
             "apartment_id",
             "contract",
             "renter",
-            "apartment",
             "images",
+            "apartment",
             "renter_search",
+            "images",
         ]

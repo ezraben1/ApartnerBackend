@@ -14,6 +14,17 @@ class OwnerApartmentViewSet(ApartmentViewSet):
     serializer_class = serializers.ApartmentSerializer
     permission_classes = [permissions.IsAuthenticated, IsApartmentOwner]
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated and user.user_type == "owner":
+            return (
+                Apartment.objects.filter(owner=user)
+                .select_related("owner")
+                .prefetch_related("rooms", "bills", "images")
+            )
+        else:
+            return Apartment.objects.none()
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
 
@@ -37,13 +48,6 @@ class OwnerApartmentViewSet(ApartmentViewSet):
     def update_apartment_details(self, request, pk=None):
         apartment = self.get_object()
         return self.update_apartment(request, apartment)
-
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_authenticated and user.user_type == "owner":
-            return Apartment.objects.filter(owner=user)
-        else:
-            return Apartment.objects.none()
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -86,9 +90,9 @@ class OwnerRoomViewSet(RoomViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_authenticated and user.user_type == "owner":
-            return Room.objects.filter(apartment__owner=self.request.user)
-        else:
-            return Room.objects.none()
+            return Room.objects.select_related("apartment").filter(
+                apartment__owner=self.request.user
+            )
 
     @action(
         detail=True, methods=["patch"], parser_classes=[FormParser, MultiPartParser]

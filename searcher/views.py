@@ -39,18 +39,17 @@ class SearcherRoomViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         query = self.request.query_params.get("search")
+        queryset = Room.objects.filter(renter=None)
         if query:
-            queryset = Room.objects.filter(
+            queryset = queryset.filter(
                 Q(apartment__city__icontains=query)
                 | Q(apartment__street__icontains=query)
                 | Q(apartment__building_number__icontains=query)
                 | Q(apartment__apartment_number__icontains=query)
                 | Q(apartment__floor__icontains=query)
-                | Q(size__icontains=query),
-                renter=None,
+                | Q(size__icontains=query)
             )
-        else:
-            queryset = Room.objects.filter(renter=None)
+        queryset = queryset.select_related("apartment").prefetch_related("images")
         return queryset
 
 

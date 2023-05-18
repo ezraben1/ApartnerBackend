@@ -137,7 +137,11 @@ class ApartmentViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_authenticated and user.user_type == "owner":
-            return Apartment.objects.filter(owner=user)
+            return (
+                Apartment.objects.filter(owner=user)
+                .select_related("owner")
+                .prefetch_related("rooms", "bills", "images")
+            )
         else:
             return Apartment.objects.none()
 
@@ -711,7 +715,9 @@ class UserInquiryViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return self.queryset.filter(Q(sender=user) | Q(receiver=user))
+        return self.queryset.select_related("sender", "receiver", "apartment").filter(
+            Q(sender=user) | Q(receiver=user)
+        )
 
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)
@@ -740,7 +746,9 @@ class InquiryReplyViewSet(
 
     def get_queryset(self):
         inquiry_id = self.kwargs.get("pk")
-        return InquiryReply.objects.filter(inquiry__id=inquiry_id)
+        return InquiryReply.objects.select_related("inquiry", "sender").filter(
+            inquiry__id=inquiry_id
+        )
 
     def perform_create(self, serializer):
         inquiry_id = self.kwargs.get("pk")
