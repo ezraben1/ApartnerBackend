@@ -349,6 +349,9 @@ def hellosign_webhook(request):
     try:
         if request.method == "POST":
             print("Request body:", request.body)  # Add this line
+            if "json" in request.POST:
+                event_str = request.POST["json"]
+                event = json.loads(event_str)
 
             # Extract the event from the request body
             body_unicode = request.body.decode("utf-8")
