@@ -353,6 +353,7 @@ def hellosign_webhook(request):
 
             if "json" in request.POST:
                 event_str = request.POST["json"]
+                print("Event String:", event_str)  # Printing event string for debug
                 event = json.loads(event_str)
                 event_type = event.get("event_type")
 
