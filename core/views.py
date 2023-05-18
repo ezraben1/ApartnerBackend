@@ -353,7 +353,7 @@ def hellosign_webhook(request):
 
             if "json" in request.POST:
                 event_str = request.POST["json"]
-                print("Event String:", event_str)  # Printing event string for debug
+                print("Event String:", event_str)
                 event = json.loads(event_str)
                 event_type = event.get("event_type")
 
@@ -380,9 +380,9 @@ def hellosign_webhook(request):
 
                     # Upload the signed document to Cloudinary
                     cloudinary.config(
-                        cloud_name="dnis06cto",
-                        api_key="419768594117284",
-                        api_secret="zexmum1c5fbT8",
+                        cloud_name="hx0brezi7",
+                        api_key="229343621824257",
+                        api_secret="ur2MDc_VkfoalVORL-kXD6m9ihg",
                     )
                     upload_response = cloudinary.uploader.upload("signed_document.pdf")
 
@@ -394,8 +394,10 @@ def hellosign_webhook(request):
                     contract.save()
 
                     return JsonResponse({"status": "ok"})
+            else:
+                print("json not in POST data")
         else:
-            return JsonResponse({"error": "Invalid request"}, status=400)
+            print("Not a POST request")
 
     except Exception as e:
         print(f"Exception in hellosign_webhook: {type(e).__name__} - {str(e)}")
