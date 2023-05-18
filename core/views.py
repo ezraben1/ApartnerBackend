@@ -343,60 +343,69 @@ class CustomUserViewSet(ModelViewSet):
 @csrf_exempt
 def hellosign_webhook(request):
     try:
-        if request.method == "POST":
-            print("Request body:", request.body)
-            print("POST data:", request.POST)
-
-            if "json" in request.POST:
-                event_str = request.POST["json"]
-                print("Event String:", event_str)
-                event = json.loads(event_str)
-                event_type = event.get("event_type")
-
-                # Return the event hash to confirm receipt
-                if event_type == "callback_test":
-                    return JsonResponse({"received": event["event_hash"]})
-
-                if event_type == "signature_request_all_signed":
-                    signature_request_id = event["signature_request"][
-                        "signature_request_id"
-                    ]
-                    client = HSClient(
-                        api_key="c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d"
-                    )
-                    details = client.get_signature_request(signature_request_id)
-
-                    # Get the signed document URL
-                    signed_document_url = details.signature_request.files_url
-
-                    # Download the signed document
-                    response = requests.get(signed_document_url, stream=True)
-                    with open("signed_document.pdf", "wb") as f:
-                        f.write(response.content)
-
-                    # Upload the signed document to Cloudinary
-                    cloudinary.config(
-                        cloud_name="hx0brezi7",
-                        api_key="229343621824257",
-                        api_secret="ur2MDc_VkfoalVORL-kXD6m9ihg",
-                    )
-                    upload_response = cloudinary.uploader.upload("signed_document.pdf")
-
-                    # Retrieve the related contract and update the file field with the new URL
-                    contract = Contract.objects.get(
-                        signature_request_id=signature_request_id
-                    )
-                    contract.file = upload_response["url"]
-                    contract.save()
-
-                    return JsonResponse({"status": "ok"})
-            else:
-                print("json not in POST data")
-        else:
+        if request.method != "POST":
             print("Not a POST request")
             return JsonResponse(
                 {"error": "Only POST requests are allowed."}, status=405
             )
+
+        print("Request body:", request.body)
+        print("POST data:", request.POST)
+
+        if "json" not in request.POST:
+            print("json not in POST data")
+            return JsonResponse({"error": "json not in POST data"}, status=400)
+
+        event_str = request.POST["json"]
+        print("Event String:", event_str)
+        event = json.loads(event_str)
+
+        event_type = event.get("event_type")
+        event_hash = event.get("event_hash")  # Add this line to extract event_hash
+
+        print(
+            f"Event Type: {event_type}, Event Hash: {event_hash}"
+        )  # Log the extracted event_type and event_hash
+
+        if event_type == "callback_test":
+            if event_hash:  # Check if event_hash is not None
+                return JsonResponse({"received": event_hash})
+            else:
+                print("No event_hash in the event")
+                return JsonResponse({"error": "No event_hash in the event"}, status=400)
+
+        if event_type == "signature_request_all_signed":
+            signature_request_id = event["signature_request"]["signature_request_id"]
+            client = HSClient(
+                api_key="c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d"
+            )
+            details = client.get_signature_request(signature_request_id)
+
+            # Get the signed document URL
+            signed_document_url = details.signature_request.files_url
+
+            # Download the signed document
+            response = requests.get(signed_document_url, stream=True)
+            with open("signed_document.pdf", "wb") as f:
+                f.write(response.content)
+
+            # Upload the signed document to Cloudinary
+            cloudinary.config(
+                cloud_name="hx0brezi7",
+                api_key="229343621824257",
+                api_secret="ur2MDc_VkfoalVORL-kXD6m9ihg",
+            )
+            upload_response = cloudinary.uploader.upload("signed_document.pdf")
+
+            # Retrieve the related contract and update the file field with the new URL
+            contract = Contract.objects.get(signature_request_id=signature_request_id)
+            contract.file = upload_response["url"]
+            contract.save()
+
+            return JsonResponse({"status": "ok"})
+
+        print(f"Unknown event type: {event_type}")
+        return JsonResponse({"error": f"Unknown event type: {event_type}"}, status=400)
 
     except Exception as e:
         print(f"Exception in hellosign_webhook: {type(e).__name__} - {str(e)}")
