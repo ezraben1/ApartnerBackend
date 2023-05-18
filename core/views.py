@@ -369,7 +369,7 @@ def hellosign_webhook(request):
 
         if event_type == "callback_test":
             if event_hash:  # Check if event_hash is not None
-                return JsonResponse({"received": event_hash})
+                return JsonResponse({"event_hash": event_hash})
             else:
                 print("No event_hash in the event")
                 return JsonResponse({"error": "No event_hash in the event"}, status=400)
