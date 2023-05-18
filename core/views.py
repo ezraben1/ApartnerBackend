@@ -31,7 +31,7 @@ from core.permissions import (
 from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponse, JsonResponse
 from rest_framework import mixins, viewsets
 from django.db.models import Q
 import cloudinary
@@ -40,7 +40,6 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from hellosign_sdk import HSClient
 import requests
 import tempfile
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 
@@ -350,11 +349,10 @@ def hellosign_webhook(request):
             )
 
         print("Request body:", request.body)
-        print("POST data:", request.POST)
 
         if "json" not in request.POST:
-            print("json not in POST data")
-            return JsonResponse({"error": "json not in POST data"}, status=400)
+            print("json not found in the request")
+            return JsonResponse({"error": "json not found in the request"}, status=400)
 
         event_str = request.POST["json"]
         print("Event String:", event_str)
@@ -363,15 +361,15 @@ def hellosign_webhook(request):
         event_type = event.get("event", {}).get("event_type")
         event_hash = event.get("event", {}).get("event_hash")
 
-        print(
-            f"Event Type: {event_type}, Event Hash: {event_hash}"
-        )  # Log the extracted event_type and event_hash
+        print(f"Event Type: {event_type}, Event Hash: {event_hash}")
 
         if event_type == "callback_test":
-            if event_hash:  # Check if event_hash is not None
-                return JsonResponse(event)  # Echo back the entire event JSON
+            if event_hash is not None:
+                print("Event Hash:", event_hash)
+                return HttpResponse("Hello API Event Received.")
             else:
                 print("No event_hash in the event")
+                print("Event Payload:", event)
                 return JsonResponse({"error": "No event_hash in the event"}, status=400)
 
         if event_type == "signature_request_all_signed":
@@ -391,9 +389,9 @@ def hellosign_webhook(request):
 
             # Upload the signed document to Cloudinary
             cloudinary.config(
-                cloud_name="hx0brezi7",
-                api_key="229343621824257",
-                api_secret="ur2MDc_VkfoalVORL-kXD6m9ihg",
+                cloud_name="dnis06cto",
+                api_key="419768594117284",
+                api_secret="zexmum1c5fbT8-959jXEb1VQj2w",
             )
             upload_response = cloudinary.uploader.upload("signed_document.pdf")
 
@@ -402,7 +400,7 @@ def hellosign_webhook(request):
             contract.file = upload_response["url"]
             contract.save()
 
-            return JsonResponse({"status": "ok"})
+            return HttpResponse("Hello API Event Received.")
 
         print(f"Unknown event type: {event_type}")
         return JsonResponse({"error": f"Unknown event type: {event_type}"}, status=400)
