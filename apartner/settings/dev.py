@@ -16,9 +16,9 @@ DATABASES = {
     }
 }
 # dev server
-cloudinary.config(
-    cloud_name=("dnis06cto"),
-    api_key=("419768594117284"),
-    api_secret=("zexmum1c5fbT8-959jXEb1VQj2w"),
-)
-ALLOWED_HOSTS = ["ecac-77-125-161-21.ngrok-free.app", "http://localhost:3000/"]
+# cloudinary.config(
+#     cloud_name=("dnis06cto"),
+#     api_key=("419768594117284"),
+#     api_secret=("zexmum1c5fbT8-959jXEb1VQj2w"),
+# )
+# ALLOWED_HOSTS = ["ecac-77-125-161-21.ngrok-free.app", "http://localhost:3000/"]

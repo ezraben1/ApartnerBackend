@@ -16,7 +16,7 @@ ALLOWED_HOSTS = [
     ".herokuapp.com",
     "apartnerbackend.herokuapp.com",
     "http://localhost:3000",
-    "https://ecac-77-125-161-21.ngrok-free.app",
+    # "https://ecac-77-125-161-21.ngrok-free.app",
 ]
 
 DATABASES = {
