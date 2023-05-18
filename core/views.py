@@ -348,64 +348,56 @@ class CustomUserViewSet(ModelViewSet):
 def hellosign_webhook(request):
     try:
         if request.method == "POST":
-            print("Request body:", request.body)  # Print request body
+            print("Request body:", request.body)
             print("POST data:", request.POST)
 
-            event = None
             if "json" in request.POST:
                 event_str = request.POST["json"]
                 event = json.loads(event_str)
-            else:
-                # Extract the event from the request body
-                body_unicode = request.body.decode("utf-8")
-                body_data = json.loads(body_unicode)
-                event = body_data.get("event", {})
+                event_type = event.get("event_type")
 
-            # Now event has been extracted either from 'json' POST field or request body, we can proceed
-            event_type = event.get("event_type")
+                # Return the event hash to confirm receipt
+                if event_type == "callback_test":
+                    return JsonResponse({"received": event["event_hash"]})
 
-            # Return the event hash to confirm receipt
-            if event_type == "callback_test":
-                return JsonResponse({"received": event["event_hash"]})
+                if event_type == "signature_request_all_signed":
+                    signature_request_id = event["signature_request"][
+                        "signature_request_id"
+                    ]
+                    client = HSClient(
+                        api_key="c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d"
+                    )
+                    details = client.get_signature_request(signature_request_id)
 
-            if event_type == "signature_request_all_signed":
-                signature_request_id = event["signature_request"][
-                    "signature_request_id"
-                ]
+                    # Get the signed document URL
+                    signed_document_url = details.signature_request.files_url
 
-                client = HSClient(
-                    api_key="c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d"
-                )
-                details = client.get_signature_request(signature_request_id)
+                    # Download the signed document
+                    response = requests.get(signed_document_url, stream=True)
+                    with open("signed_document.pdf", "wb") as f:
+                        f.write(response.content)
 
-                # Get the signed document URL
-                signed_document_url = details.signature_request.files_url
+                    # Upload the signed document to Cloudinary
+                    cloudinary.config(
+                        cloud_name="dnis06cto",
+                        api_key="419768594117284",
+                        api_secret="zexmum1c5fbT8",
+                    )
+                    upload_response = cloudinary.uploader.upload("signed_document.pdf")
 
-                # Download the signed document
-                response = requests.get(signed_document_url, stream=True)
-                with open("signed_document.pdf", "wb") as f:
-                    f.write(response.content)
+                    # Retrieve the related contract and update the file field with the new URL
+                    contract = Contract.objects.get(
+                        signature_request_id=signature_request_id
+                    )
+                    contract.file = upload_response["url"]
+                    contract.save()
 
-                # Upload the signed document to Cloudinary
-                cloudinary.config(
-                    cloud_name="dnis06cto",
-                    api_key="419768594117284",
-                    api_secret="zexmum1c5fbT8",
-                )
-                upload_response = cloudinary.uploader.upload("signed_document.pdf")
-
-                # Retrieve the related contract and update the file field with the new URL
-                contract = Contract.objects.get(
-                    signature_request_id=signature_request_id
-                )
-                contract.file = upload_response["url"]
-                contract.save()
-
-                return JsonResponse({"status": "ok"})
+                    return JsonResponse({"status": "ok"})
         else:
             return JsonResponse({"error": "Invalid request"}, status=400)
+
     except Exception as e:
-        print("Exception in hellosign_webhook:")
+        print(f"Exception in hellosign_webhook: {type(e).__name__} - {str(e)}")
         traceback.print_exc()
         return JsonResponse({"error": str(e)}, status=500)
 
