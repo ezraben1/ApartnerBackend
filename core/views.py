@@ -360,8 +360,8 @@ def hellosign_webhook(request):
         print("Event String:", event_str)
         event = json.loads(event_str)
 
-        event_type = event.get("event_type")
-        event_hash = event.get("event_hash")  # Add this line to extract event_hash
+        event_type = event.get("event", {}).get("event_type")
+        event_hash = event.get("event", {}).get("event_hash")
 
         print(
             f"Event Type: {event_type}, Event Hash: {event_hash}"
