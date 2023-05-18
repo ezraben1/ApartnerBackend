@@ -1,7 +1,6 @@
 import json
 import traceback
 from django_filters.rest_framework import DjangoFilterBackend
-import hellosign_sdk
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from .models import (
     ApartmentImage,
@@ -32,7 +31,6 @@ from core.permissions import (
 from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.conf import settings
 from django.http import FileResponse
 from rest_framework import mixins, viewsets
 from django.db.models import Q
@@ -43,8 +41,6 @@ from hellosign_sdk import HSClient
 import requests
 import tempfile
 from django.http import JsonResponse
-from django.views import View
-from hellosign_sdk.utils.exception import HSException
 from django.views.decorators.csrf import csrf_exempt
 
 
@@ -398,6 +394,9 @@ def hellosign_webhook(request):
                 print("json not in POST data")
         else:
             print("Not a POST request")
+            return JsonResponse(
+                {"error": "Only POST requests are allowed."}, status=405
+            )
 
     except Exception as e:
         print(f"Exception in hellosign_webhook: {type(e).__name__} - {str(e)}")
