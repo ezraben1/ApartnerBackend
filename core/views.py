@@ -348,6 +348,8 @@ class CustomUserViewSet(ModelViewSet):
 def hellosign_webhook(request):
     try:
         if request.method == "POST":
+            print("Request body:", request.body)  # Add this line
+
             # Extract the event from the request body
             body_unicode = request.body.decode("utf-8")
             body_data = json.loads(body_unicode)

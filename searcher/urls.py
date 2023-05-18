@@ -2,7 +2,6 @@ from django.urls import path
 from rest_framework_nested import routers
 from core.views import (
     ApartmentInquiryViewSet,
-    ContractViewSet,
     CustomUserViewSet,
     ReviewViewSet,
     RoomViewSet,
