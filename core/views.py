@@ -349,6 +349,8 @@ def hellosign_webhook(request):
     try:
         if request.method == "POST":
             print("Request body:", request.body)  # Print request body
+            print("POST data:", request.POST)
+
             event = None
             if "json" in request.POST:
                 event_str = request.POST["json"]
