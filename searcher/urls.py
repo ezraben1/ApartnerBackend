@@ -5,6 +5,7 @@ from core.views import (
     CustomUserViewSet,
     ReviewViewSet,
     RoomViewSet,
+    SignatureStatusView,
 )
 from searcher.views import SearcherContractViewSet, SearcherRoomViewSet
 
@@ -41,11 +42,14 @@ urlpatterns = [
         name="contract-sign",
     ),
     path(
-        "searcher-search/<int:room_id>/contract/<int:pk>/update-signed-contract",
-        SearcherContractViewSet.as_view(
-            {"post": "update_signed_contract", "patch": "update_signed_contract"}
-        ),
-        name="contract-sign-update",
+        "searcher-search/<int:room_id>/contract/<int:pk>/upload-signed-document",
+        SearcherContractViewSet.as_view({"patch": "upload_signed_document"}),
+        name="upload-signed-document",
+    ),
+    path(
+        "searcher-search/<int:room_id>/contract/<int:pk>/signature-status/<str:signature_request_id>/",
+        SignatureStatusView.as_view(),
+        name="signature-status",
     ),
     path(
         "searcher-search/<int:room_id>/contract/<int:pk>/download/",

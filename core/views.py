@@ -1,11 +1,12 @@
 import json
 import os
 import pprint
+import time
 import traceback
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from core.utils import download_and_upload_signed_contract, download_signed_file
+from core.utils import download_and_upload_signed_contract
 from .models import (
     ApartmentImage,
     Contract,
@@ -47,6 +48,7 @@ import tempfile
 from django.views.decorators.csrf import csrf_exempt
 from dropbox_sign import ApiClient, ApiException, Configuration, apis, models
 from pprint import pprint
+from rest_framework.views import APIView
 
 
 class ApartmentImageViewSet(ModelViewSet):
@@ -349,6 +351,31 @@ class CustomUserViewSet(ModelViewSet):
         return Response(serializer.data)
 
 
+class SignatureStatusView(APIView):
+    def get(self, request, *args, **kwargs):
+        signature_request_id = self.kwargs.get("signature_request_id")
+
+        configuration = Configuration(
+            username="c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d"
+        )
+
+        with ApiClient(configuration) as api_client:
+            signature_request_api = apis.SignatureRequestApi(api_client)
+
+            try:
+                response = signature_request_api.signature_request_get(
+                    signature_request_id
+                )
+                return Response(
+                    {"status": response.signature_request.signatures[0].status_code},
+                    status=status.HTTP_200_OK,
+                )
+            except ApiException as e:
+                return Response(
+                    {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+
 @csrf_exempt
 def hellosign_webhook(request):
     try:
@@ -508,6 +535,7 @@ class ContractViewSet(ModelViewSet):
                     )
 
                 os.remove(temp_file_path)  # remove the temporary file after use
+                print("response", response)
 
                 if response.signature_request.signatures:
                     signature_id = response.signature_request.signatures[0].signature_id
@@ -515,18 +543,16 @@ class ContractViewSet(ModelViewSet):
                         response.signature_request.signature_request_id
                     )
                     contract.save()
-                    signed_document_url = download_and_upload_signed_contract(
-                        contract.signature_request_id
+                    print(
+                        "contract signature_request_id:", contract.signature_request_id
                     )
-                    contract.file = signed_document_url  # Save the URL of the signed document to the Contract's file field
-                    contract.save()
 
-                    user.user_type = "renter"  # update user type to Renter
-                    user.save()
+                    # user.user_type = "renter"  # update user type to Renter
+                    # user.save()
 
-                    room = Room.objects.get(contract=contract)
-                    room.renter = user  # Set the Room's renter to the new renter
-                    room.save()
+                    # room = Room.objects.get(contract=contract)
+                    # room.renter = user  # Set the Room's renter to the new renter
+                    # room.save()
 
                     sign_url = get_embedded_sign_url(signature_id)
                     return Response({"sign_url": sign_url})
@@ -542,19 +568,25 @@ class ContractViewSet(ModelViewSet):
                 print("Unexpected error occurred: ", e)
                 raise
 
-    @action(detail=True, methods=["post", "patch"], url_path="update-signed-contract")
-    def update_signed_contract(self, request, *args, **kwargs):
+    @action(detail=True, methods=["patch"], url_path="upload-signed-document")
+    def upload_signed_document(self, request, *args, **kwargs):
         contract = self.get_object()
-        signature_request_id = request.data.get("signature_request_id")
-        if signature_request_id:
-            signed_document_url = download_signed_file(request, signature_request_id)
-            contract.file = signed_document_url
-            contract.save()
-            return redirect(
-                signed_document_url
-            )  # Trigger the download of the signed file
-        else:
-            return Response({"error": "Signature request ID is required."}, status=400)
+
+        for _ in range(12):  # try for roughly one minute
+            uploaded_url = download_and_upload_signed_contract(
+                contract.signature_request_id
+            )
+
+            if uploaded_url is not None:
+                contract.file = uploaded_url
+                contract.save()
+                return Response({"message": "Signed document uploaded successfully"})
+
+            time.sleep(5)  # wait for 5 seconds before trying again
+
+        return Response(
+            {"error": "Failed to download and upload the signed document"}, status=400
+        )
 
     def get_queryset(self):
         user = self.request.user

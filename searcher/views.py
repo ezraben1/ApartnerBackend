@@ -1,7 +1,4 @@
-import os
-from django.http import FileResponse, Http404
-from rest_framework.response import Response
-from rest_framework.decorators import action
+from django.http import Http404
 from rest_framework import permissions
 from core import serializers
 from core.filters import RoomFilter
@@ -11,8 +8,7 @@ from django.db.models import Q
 from core.pagination import DefaultPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework import status
-from core.permissions import IsAuthenticated, IsSearcher
+from core.permissions import IsAuthenticated
 from core.views import ContractViewSet
 
 from searcher.serializers import SearcherRoomSerializer

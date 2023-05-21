@@ -222,6 +222,7 @@ class ContractSerializer(serializers.ModelSerializer):
             "deposit_amount",
             "rent_amount",
             "file",
+            "signature_request_id",
         ]
 
     def get_file(self, obj):

@@ -4,8 +4,9 @@ from dropbox_sign import ApiClient, ApiException, Configuration, apis
 import cloudinary.uploader
 import os
 import tempfile
+import cloudinary
+from rest_framework.response import Response
 import time
-from django.http import HttpResponse
 
 
 def send_email(recipient_list, subject, message):
@@ -18,58 +19,59 @@ def send_email(recipient_list, subject, message):
     )
 
 
-def download_and_upload_signed_contract(
-    signature_request_id, retry_attempts=5, delay=5
-):
+def download_and_upload_signed_contract(signature_request_id):
     configuration = Configuration(
         username="c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d"
     )
 
+    temp_file_path = None
+    max_retries = 8
+    retry_interval = 5  # Delay between retries in seconds
+
     with ApiClient(configuration) as api_client:
         signature_request_api = apis.SignatureRequestApi(api_client)
 
-        for _ in range(retry_attempts):
+        for retry_count in range(max_retries):
             try:
-                response = signature_request_api.signature_request_files_as_file_url(
-                    signature_request_id
+                print("Attempting to download file...")
+                response = signature_request_api.signature_request_files(
+                    signature_request_id, file_type="pdf"
                 )
-                signed_document_url = response.file_url
-
-                if signed_document_url:
-                    # Upload URL directly to Cloudinary
-                    upload_result = cloudinary.uploader.upload(signed_document_url)
-                    return upload_result["secure_url"]
-
+                with tempfile.NamedTemporaryFile(
+                    delete=False, suffix=".pdf"
+                ) as temp_file:
+                    temp_file.write(response.read())
+                    temp_file_path = temp_file.name
+                print("File downloaded successfully.")
+                break  # Exit the loop if file download is successful
             except ApiException as e:
                 print("Exception when calling Dropbox Sign API: %s\n" % e)
 
-            time.sleep(delay)
+            if retry_count < max_retries - 1:
+                print(
+                    f"Retry #{retry_count + 1} - Waiting {retry_interval} seconds before retrying..."
+                )
+                time.sleep(retry_interval)
+
+        # Upload the signed contract to Cloudinary and get the URL
+        if temp_file_path:
+            try:
+                print("Attempting to upload file...")
+                print("Temp file path:", temp_file_path)
+
+                with open(temp_file_path, "rb") as file_to_upload:  # Open the file
+                    upload_response = cloudinary.uploader.upload(
+                        file_to_upload, resource_type="auto"  # Upload the file
+                    )
+                cloudinary_url = upload_response["secure_url"]
+                print("File uploaded successfully. URL:", cloudinary_url)
+            except cloudinary.exceptions.Error as e:
+                print("Exception when calling Cloudinary API: %s\n" % e)
+                return None
+
+            # Remove the temporary file after use
+            os.remove(temp_file_path)
+
+            return cloudinary_url
 
     return None
-
-
-def download_signed_file(request, signature_request_id):
-    file_type = "pdf"
-    print("signature_request_api: ", signature_request_api)
-    # Configure the HelloSign/Dropbox Sign API client
-    configuration = Configuration(
-        username="c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d",
-        # Set other configuration options as needed
-    )
-    api_client = ApiClient(configuration)
-    signature_request_api = apis.SignatureRequestApi(api_client)
-
-    try:
-        # Download the signed file using the signature request ID and file type
-        response = signature_request_api.signature_request_files(
-            signature_request_id, file_type=file_type
-        )
-
-        # Create the response with the file contents
-        response_file = response.read()
-        http_response = HttpResponse(response_file, content_type="application/pdf")
-        http_response["Content-Disposition"] = 'attachment; filename="signed_file.pdf"'
-        return http_response
-    except ApiException as e:
-        # Handle API exceptions
-        return HttpResponse("Error downloading signed file: {}".format(str(e)))
