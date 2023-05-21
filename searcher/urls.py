@@ -41,6 +41,13 @@ urlpatterns = [
         name="contract-sign",
     ),
     path(
+        "searcher-search/<int:room_id>/contract/<int:pk>/update-signed-contract",
+        SearcherContractViewSet.as_view(
+            {"post": "update_signed_contract", "patch": "update_signed_contract"}
+        ),
+        name="contract-sign-update",
+    ),
+    path(
         "searcher-search/<int:room_id>/contract/<int:pk>/download/",
         SearcherContractViewSet.as_view({"get": "download"}),
         name="contract-download",

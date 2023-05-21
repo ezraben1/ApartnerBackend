@@ -4,6 +4,8 @@ import pprint
 import traceback
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+
+from core.utils import download_and_upload_signed_contract, download_signed_file
 from .models import (
     ApartmentImage,
     Contract,
@@ -429,18 +431,15 @@ def get_embedded_sign_url(signature_id):
 
         try:
             response = embedded_api.embedded_sign_url(signature_id)
-            pprint(response)
-            sign_url = response["embedded"]["sign_url"]  # Extract sign URL
+            sign_url = response["embedded"]["sign_url"]
             client_id = "b0e3cae5b0eaa2ab368de095fe5ea46a"
             sign_url_with_client_id = f"{sign_url}&client_id={client_id}"
-            print(
-                f"Extracted sign_url: {sign_url_with_client_id}"
-            )  # Print the sign URL
+
             return sign_url_with_client_id
         except ApiException as e:
             print("Exception when calling Dropbox Sign API: %s\n" % e)
             return None
-        except Exception as e:  # add this
+        except Exception as e:
             print("Unexpected error occurred: ", e)
             raise
 
@@ -507,7 +506,6 @@ class ContractViewSet(ModelViewSet):
                     response = signature_request_api.signature_request_create_embedded(
                         embedded_request
                     )
-                    print(response)
 
                 os.remove(temp_file_path)  # remove the temporary file after use
 
@@ -516,6 +514,11 @@ class ContractViewSet(ModelViewSet):
                     contract.signature_request_id = (
                         response.signature_request.signature_request_id
                     )
+                    contract.save()
+                    signed_document_url = download_and_upload_signed_contract(
+                        contract.signature_request_id
+                    )
+                    contract.file = signed_document_url  # Save the URL of the signed document to the Contract's file field
                     contract.save()
 
                     user.user_type = "renter"  # update user type to Renter
@@ -526,7 +529,6 @@ class ContractViewSet(ModelViewSet):
                     room.save()
 
                     sign_url = get_embedded_sign_url(signature_id)
-                    print(f"sign_url in send_for_signing: {sign_url}")  # add this line
                     return Response({"sign_url": sign_url})
 
                 else:
@@ -539,6 +541,20 @@ class ContractViewSet(ModelViewSet):
             except Exception as e:  # add this
                 print("Unexpected error occurred: ", e)
                 raise
+
+    @action(detail=True, methods=["post", "patch"], url_path="update-signed-contract")
+    def update_signed_contract(self, request, *args, **kwargs):
+        contract = self.get_object()
+        signature_request_id = request.data.get("signature_request_id")
+        if signature_request_id:
+            signed_document_url = download_signed_file(request, signature_request_id)
+            contract.file = signed_document_url
+            contract.save()
+            return redirect(
+                signed_document_url
+            )  # Trigger the download of the signed file
+        else:
+            return Response({"error": "Signature request ID is required."}, status=400)
 
     def get_queryset(self):
         user = self.request.user
