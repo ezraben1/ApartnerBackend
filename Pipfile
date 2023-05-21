@@ -60,6 +60,7 @@ whitenoise = "==6.4.0"
 filters = "*"
 cloudinary = "*"
 hellosign-python-sdk = "*"
+dropbox-sign = "*"
 
 [dev-packages]
 

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "4c8a1e7889c801f1b694d556e16976892672398b7676c0cfb80ff62980e9d250"
+            "sha256": "f1203416c2a7d099736fdfebdb51f92cf764bea1748e68e750514b497e824cc6"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -357,6 +357,14 @@
             ],
             "index": "pypi",
             "version": "==2.1.0"
+        },
+        "dropbox-sign": {
+            "hashes": [
+                "sha256:4dc47b3343259ed9422b70a671c24b5e303d3bd2383aa57ec6bf471f9c2bbc96",
+                "sha256:534dc448907481e14f3b28809c29c5d3598ef56858d9df3582bec8b287b424fa"
+            ],
+            "index": "pypi",
+            "version": "==1.1.1"
         },
         "filelock": {
             "hashes": [
@@ -755,11 +763,11 @@
         },
         "setuptools": {
             "hashes": [
-                "sha256:23aaf86b85ca52ceb801d32703f12d77517b2556af839621c641fca11287952b",
-                "sha256:f104fa03692a2602fa0fec6c6a9e63b6c8a968de13e17c026957dd1f53d80990"
+                "sha256:5df61bf30bb10c6f756eb19e7c9f3b473051f48db77fddbe06ff2ca307df9a6f",
+                "sha256:62642358adc77ffa87233bc4d2354c4b2682d214048f500964dbe760ccedf102"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==67.7.2"
+            "version": "==67.8.0"
         },
         "six": {
             "hashes": [
