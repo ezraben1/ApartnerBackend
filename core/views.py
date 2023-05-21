@@ -580,6 +580,15 @@ class ContractViewSet(ModelViewSet):
             if uploaded_url is not None:
                 contract.file = uploaded_url
                 contract.save()
+
+                user = self.request.user
+                user.user_type = "renter"  # update user type to Renter
+                user.save()
+
+                room = Room.objects.get(contract=contract)
+                room.renter = user  # Set the Room's renter to the new renter
+                room.save()
+
                 return Response({"message": "Signed document uploaded successfully"})
 
             time.sleep(5)  # wait for 5 seconds before trying again
