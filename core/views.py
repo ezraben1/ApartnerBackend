@@ -1,4 +1,6 @@
 import json
+import os
+import pprint
 import traceback
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -41,6 +43,8 @@ from hellosign_sdk import HSClient
 import requests
 import tempfile
 from django.views.decorators.csrf import csrf_exempt
+from dropbox_sign import ApiClient, ApiException, Configuration, apis, models
+from pprint import pprint
 
 
 class ApartmentImageViewSet(ModelViewSet):
@@ -415,6 +419,32 @@ def hellosign_webhook(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+def get_embedded_sign_url(signature_id):
+    configuration = Configuration(
+        username="c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d"
+    )
+
+    with ApiClient(configuration) as api_client:
+        embedded_api = apis.EmbeddedApi(api_client)
+
+        try:
+            response = embedded_api.embedded_sign_url(signature_id)
+            pprint(response)
+            sign_url = response["embedded"]["sign_url"]  # Extract sign URL
+            client_id = "b0e3cae5b0eaa2ab368de095fe5ea46a"
+            sign_url_with_client_id = f"{sign_url}&client_id={client_id}"
+            print(
+                f"Extracted sign_url: {sign_url_with_client_id}"
+            )  # Print the sign URL
+            return sign_url_with_client_id
+        except ApiException as e:
+            print("Exception when calling Dropbox Sign API: %s\n" % e)
+            return None
+        except Exception as e:  # add this
+            print("Unexpected error occurred: ", e)
+            raise
+
+
 class ContractViewSet(ModelViewSet):
     queryset = Contract.objects.all()
     serializer_class = serializers.ContractSerializer
@@ -426,56 +456,89 @@ class ContractViewSet(ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="send-for-signing")
     def send_for_signing(self, request, *args, **kwargs):
-        client = HSClient(
-            api_key="c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d"
+        configuration = Configuration(
+            username="c35b8f89b102910d72f6c05bf78097f62e8e9e2f28c164a587ba0ab331bca22d"
         )
-        contract = self.get_object()
+        with ApiClient(configuration) as api_client:
+            signature_request_api = apis.SignatureRequestApi(api_client)
+            embedded_api = apis.EmbeddedApi(api_client)
+            contract = self.get_object()
 
-        # Define the signer
-        user = self.request.user
-        signer_email = user.email
-        signer_name = user.first_name + " " + user.last_name
+            user = self.request.user
+            signer_email = user.email
+            signer_name = user.first_name + " " + user.last_name
 
-        # Download the file from Cloudinary
-        response = requests.get(contract.file.url, stream=True)
+            signer = models.SubSignatureRequestSigner(
+                email_address=signer_email,
+                name=signer_name,
+                order=0,
+            )
 
-        # Save the file to a temporary location
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:  # filter out keep-alive new chunks
-                    temp_file.write(chunk)
+            signing_options = models.SubSigningOptions(
+                draw=True,
+                type=True,
+                upload=True,
+                phone=True,
+                default_type="draw",
+            )
 
-            # Create a new signature request
-        signature_request = client.send_signature_request(
-            test_mode=True,
-            title="Sign Contract",
-            subject="The contract for your new apartment is ready for signature",
-            message="Please sign this contract to confirm your agreement",
-            signers=[{"email_address": signer_email, "name": signer_name}],
-            files=[temp_file.name],
-        )
+            response = requests.get(contract.file.url, stream=True)
 
-        # Check if the request was successful
-        if signature_request is not None:
-            signature_request_id = signature_request.signature_request_id
+            # Save the file to a temporary location
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        temp_file.write(chunk)
+                temp_file_path = temp_file.name
 
-            # Store the signature_request_id in your Contract model
-            contract.signature_request_id = signature_request_id
-            contract.save()
+            try:
+                with open(temp_file_path, "rb") as f:
+                    embedded_request = models.SignatureRequestCreateEmbeddedRequest(
+                        client_id="b0e3cae5b0eaa2ab368de095fe5ea46a",
+                        title="Sign Contract",
+                        subject="The contract for your new apartment is ready for signature",
+                        message="Please sign this contract to confirm your agreement",
+                        signers=[signer],
+                        files=[f],
+                        signing_options=signing_options,
+                        test_mode=True,
+                    )
 
-            # If successful, update user type and Room's renter
-            user.user_type = "renter"  # update user type to Renter
-            user.save()
+                    response = signature_request_api.signature_request_create_embedded(
+                        embedded_request
+                    )
+                    print(response)
 
-            room = Room.objects.get(contract=contract)
-            room.renter = user  # Set the Room's renter to the new renter
-            room.save()
+                os.remove(temp_file_path)  # remove the temporary file after use
 
-        else:
-            print("Failed to send signature request")
+                if response.signature_request.signatures:
+                    signature_id = response.signature_request.signatures[0].signature_id
+                    contract.signature_request_id = (
+                        response.signature_request.signature_request_id
+                    )
+                    contract.save()
 
-        # Return the response from HelloSign
-        return Response({"signature_request_id": signature_request_id})
+                    user.user_type = "renter"  # update user type to Renter
+                    user.save()
+
+                    room = Room.objects.get(contract=contract)
+                    room.renter = user  # Set the Room's renter to the new renter
+                    room.save()
+
+                    sign_url = get_embedded_sign_url(signature_id)
+                    print(f"sign_url in send_for_signing: {sign_url}")  # add this line
+                    return Response({"sign_url": sign_url})
+
+                else:
+                    print("No signatures in the response")
+                    # handle the case when there are no signatures
+
+            except ApiException as e:
+                print("Exception when calling Dropbox Sign API: %s\n" % e)
+                raise e
+            except Exception as e:  # add this
+                print("Unexpected error occurred: ", e)
+                raise
 
     def get_queryset(self):
         user = self.request.user
