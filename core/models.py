@@ -139,6 +139,17 @@ class Contract(models.Model):
     signature_request_id = models.CharField(max_length=255, blank=True, null=True)
 
 
+class SuggestedContract(models.Model):
+    contract = models.ForeignKey(
+        "Contract", on_delete=models.CASCADE, related_name="suggestions"
+    )
+    suggested_rent_amount = models.DecimalField(max_digits=8, decimal_places=2)
+    price_suggested_by = models.ForeignKey(
+        CustomUser, on_delete=models.SET_NULL, null=True
+    )
+    notes = models.TextField(null=True, blank=True)
+
+
 class Room(models.Model):
     apartment = models.ForeignKey(
         Apartment, on_delete=models.PROTECT, related_name="rooms"
@@ -188,6 +199,7 @@ class Bill(models.Model):
     WATER = "water"
     RENT = "rent"
     OTHER = "other"
+    DEPOSITS_GUARANTEES = "deposits_guarantees"
 
     BILL_TYPES = [
         (ELECTRICITY, "Electricity"),
@@ -195,6 +207,7 @@ class Bill(models.Model):
         (WATER, "Water"),
         (RENT, "Rent"),
         (OTHER, "Other"),
+        (DEPOSITS_GUARANTEES, "Deposits/Guarantees"),
     ]
 
     apartment = models.ForeignKey(
@@ -255,12 +268,13 @@ class Inquiry(models.Model):
     type = models.CharField(max_length=20, choices=INQUIRY_TYPE_CHOICES)
     message = models.TextField()
     image = CloudinaryField("image", blank=True, null=True)
+    read = models.BooleanField(default=False)  # Add the read field here
 
     def __str__(self):
         return f"Inquiry #{self.id} about {self.apartment.address}"
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["read", "-created_at"]
 
 
 class InquiryReply(models.Model):

@@ -10,6 +10,7 @@ from .models import (
     CustomUser,
     Contract,
     Bill,
+    SuggestedContract,
 )
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -68,6 +69,7 @@ class BillSerializer(serializers.ModelSerializer):
             "bill_type",
             "amount",
             "date",
+            "paid",
             "created_by",
             "created_at",
             "file",
@@ -201,6 +203,23 @@ class SimpleApartmentSerializer(serializers.ModelSerializer):
             "ac",
             "images",
         ]
+
+
+class SuggestedContractSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SuggestedContract
+        fields = [
+            "id",
+            "contract",
+            "suggested_rent_amount",
+            "price_suggested_by",
+            "notes",
+        ]
+
+    def create(self, validated_data):
+        print(validated_data)  # Check the contents of validated_data
+        validated_data["price_suggested_by"] = self.context["request"].user
+        return super().create(validated_data)
 
 
 class ContractSerializer(serializers.ModelSerializer):
@@ -380,6 +399,15 @@ class SimpleUserSerializer(serializers.ModelSerializer):
         fields = ["id", "first_name", "last_name"]
 
 
+class SimpleInquirySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Inquiry
+        fields = [
+            "id",
+            "read",
+        ]
+
+
 class InquirySerializer(serializers.ModelSerializer):
     image = serializers.ImageField(max_length=None, use_url=True)
 
@@ -401,6 +429,7 @@ class InquirySerializer(serializers.ModelSerializer):
             "message",
             "created_at",
             "status",
+            "read",
             "image",
         ]
 

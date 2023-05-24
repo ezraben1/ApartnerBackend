@@ -6,6 +6,7 @@ from core.views import (
     ReviewViewSet,
     RoomViewSet,
     SignatureStatusView,
+    SuggestedContractViewSet,
 )
 from searcher.views import SearcherContractViewSet, SearcherRoomViewSet
 
@@ -33,7 +34,7 @@ urlpatterns = [
     ),
     path(
         "searcher-search/<int:room_id>/contract/<int:pk>/",
-        SearcherContractViewSet.as_view({"get": "retrieve"}),
+        SearcherContractViewSet.as_view({"get": "retrieve", "patch": "update"}),
         name="contract-detail",
     ),
     path(
@@ -45,6 +46,11 @@ urlpatterns = [
         "searcher-search/<int:room_id>/contract/<int:pk>/upload-signed-document",
         SearcherContractViewSet.as_view({"patch": "upload_signed_document"}),
         name="upload-signed-document",
+    ),
+    path(
+        "searcher-search/<int:room_id>/contract/<int:pk>/suggestedcontracts",
+        SuggestedContractViewSet.as_view({"get": "list", "post": "create"}),
+        name="suggestedcontracts",
     ),
     path(
         "searcher-search/<int:room_id>/contract/<int:pk>/signature-status/<str:signature_request_id>/",

@@ -1,7 +1,6 @@
-import mimetypes
 import os
 from django.conf import settings
-from django.http import FileResponse, Http404, HttpResponse
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from core.permissions import IsAuthenticated, IsRoomRenter
@@ -10,7 +9,6 @@ from rest_framework.response import Response
 from core.serializers import (
     BillSerializer,
     ContractSerializer,
-    ReviewSerializer,
     RoomSerializer,
 )
 from rest_framework.response import Response
@@ -27,6 +25,7 @@ from renter.serializers import RenterApartmentSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
+import requests
 
 
 class RenterApartmentViewSet(viewsets.ReadOnlyModelViewSet):
@@ -80,11 +79,11 @@ class RenterBillViewSet(viewsets.ReadOnlyModelViewSet):
         except Room.DoesNotExist:
             return Bill.objects.none()
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=["post", "patch"])
     def pay(self, request, pk=None):
         bill = self.get_object()
-        if not bill.is_paid:
-            bill.is_paid = True
+        if not bill.paid:
+            bill.paid = True
             bill.save()
             return Response({"status": "success"})
         return Response(
@@ -94,23 +93,26 @@ class RenterBillViewSet(viewsets.ReadOnlyModelViewSet):
     @action(
         detail=False, methods=["get"], url_path=r"my-bills/(?P<bill_id>\d+)/download"
     )
-    def download(self, request, bill_id=None):
-        bill = get_object_or_404(Bill, id=bill_id)
-        file_path = os.path.join(settings.MEDIA_ROOT, str(bill.file))
-        if os.path.exists(file_path):
-            content_type, encoding = mimetypes.guess_type(file_path)
-            content_type = content_type or "application/octet-stream"
-            with open(file_path, "rb") as fh:
-                response = HttpResponse(fh.read(), content_type=content_type)
-                response[
-                    "Content-Disposition"
-                ] = f"attachment; filename={os.path.basename(file_path)}"
-                if encoding:
-                    response["Content-Encoding"] = encoding
-                return response
-        return Response(
-            {"message": "File not found."}, status=status.HTTP_404_NOT_FOUND
-        )
+    @action(detail=True, methods=["get"])
+    def download(self, request, apartment_id=None, bill_id=None, *args, **kwargs):
+        bill = self.get_object()
+        if not bill.file:
+            return Response(
+                {"error": "No file available."}, status=status.HTTP_404_NOT_FOUND
+            )
+        file_url = bill.file.url
+        if not file_url.endswith(".pdf"):
+            file_url += ".pdf"
+
+        try:
+            file_response = FileResponse(requests.get(file_url, stream=True))
+            file_response["Content-Disposition"] = 'attachment; filename="bill.pdf"'
+            return file_response
+        except requests.exceptions.RequestException as e:
+            return Response(
+                {"error": "Failed to download the file."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class RenterContractViewSet(viewsets.ModelViewSet):

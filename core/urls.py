@@ -13,6 +13,9 @@ custom_router.register(
     views.InquiryReplyViewSet,
     basename="inquiry-reply",
 )
+custom_router.register(
+    "simple-inquiries", views.SimpleInquiryViewst, basename="simple-inquiries"
+)
 
 urlpatterns = [
     path("hellosign_webhook/", views.hellosign_webhook, name="hellosign_webhook"),

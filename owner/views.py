@@ -1,13 +1,17 @@
+from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404
 from core import serializers
 from core.models import Apartment, ApartmentImage, Bill, Contract, Room, RoomImage
 from core.permissions import IsApartmentOwner
-from rest_framework import permissions, status
+from rest_framework import permissions, status, viewsets
 from core.views import ApartmentViewSet, RoomViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from cloudinary.uploader import upload
+
+from owner.serializers import OwnerContractSuggestionSerializer
+from django.contrib.auth.decorators import login_required
 
 
 class OwnerApartmentViewSet(ApartmentViewSet):
@@ -129,3 +133,14 @@ class OwnerRoomViewSet(RoomViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
+
+
+class OwnerContractSuggestionViewSet(viewsets.ModelViewSet):
+    serializer_class = OwnerContractSuggestionSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated and user.user_type == "owner":
+            return Contract.objects.filter(owner=user)
+        else:
+            return Contract.objects.none()

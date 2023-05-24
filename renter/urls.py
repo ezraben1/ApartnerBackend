@@ -44,7 +44,7 @@ urlpatterns = [
         name="review-detail",
     ),
     path(
-        "my-bills/<int:bill_id>/download/",
+        "my-bills/<int:pk>/download/",
         RenterBillViewSet.as_view({"get": "download"}),
         name="bill-download-file",
     ),

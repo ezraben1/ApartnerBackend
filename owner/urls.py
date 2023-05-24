@@ -7,6 +7,7 @@ from core.views import (
     BillViewSet,
     RoomImageViewSet,
     RoomViewSet,
+    SuggestedContractViewSet,
 )
 
 app_name = "owner"
@@ -16,6 +17,11 @@ router.register("owner-apartments", views.OwnerApartmentViewSet, basename="apart
 router.register("owner-rooms", views.OwnerRoomViewSet, basename="rooms")
 router.register("owner-contarcts", ContractViewSet, basename="contracts")
 router.register("owner-bills", BillViewSet, basename="bills")
+router.register(
+    "owner-contract-suggestions",
+    views.OwnerContractSuggestionViewSet,
+    basename="owner-contract-suggestions",
+)
 
 
 urlpatterns = [
@@ -187,5 +193,20 @@ urlpatterns = [
         "owner-rooms/<int:room_id>/images/<int:pk>/",
         RoomImageViewSet.as_view({"get": "retrieve", "delete": "destroy"}),
         name="room_image_detail",
+    ),
+    path(
+        "owner-contract-suggestions/<int:contract_pk>/suggestion/<int:pk>/",
+        SuggestedContractViewSet.as_view({"get": "retrieve"}),
+        name="suggestions",
+    ),
+    path(
+        "owner-contract-suggestions/<int:contract_pk>/suggestion/<int:pk>/accept/",
+        SuggestedContractViewSet.as_view({"post": "accept"}),
+        name="accept-suggestion",
+    ),
+    path(
+        "owner-contract-suggestions/<int:contract_pk>/suggestion/<int:pk>/decline/",
+        SuggestedContractViewSet.as_view({"delete": "decline"}),
+        name="decline-suggestion",
     ),
 ] + router.urls

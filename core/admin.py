@@ -6,7 +6,7 @@ from django.urls import reverse
 from . import models
 from django.contrib.auth.admin import UserAdmin
 from django.core.exceptions import PermissionDenied
-from .models import Bill, Inquiry, InquiryReply
+from .models import Bill, Inquiry, InquiryReply, SuggestedContract
 
 
 @admin.register(models.Room)
@@ -139,6 +139,7 @@ class InquiryAdmin(admin.ModelAdmin):
         "apartment",
         "sender",
         "receiver",
+        "read",
         "type",
         "status",
         "created_at",
@@ -151,6 +152,7 @@ class InquiryAdmin(admin.ModelAdmin):
         "receiver__email",
     )
     inlines = [InquiryReplyInline]
+    list_editable = ["read"]
 
 
 @admin.register(InquiryReply)
@@ -163,3 +165,4 @@ admin.site.register(Bill, BillAdmin)
 
 
 admin.site.register(models.CustomUser, CustomUserAdmin)
+admin.site.register(SuggestedContract)

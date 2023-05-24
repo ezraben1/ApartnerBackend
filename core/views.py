@@ -18,6 +18,7 @@ from .models import (
     RoomImage,
     Bill,
     Apartment,
+    SuggestedContract,
 )
 from . import serializers
 from rest_framework import permissions
@@ -43,12 +44,12 @@ import cloudinary
 import requests
 from rest_framework.parsers import MultiPartParser, FormParser
 from hellosign_sdk import HSClient
-import requests
 import tempfile
 from django.views.decorators.csrf import csrf_exempt
 from dropbox_sign import ApiClient, ApiException, Configuration, apis, models
-from pprint import pprint
 from rest_framework.views import APIView
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 
 
 class ApartmentImageViewSet(ModelViewSet):
@@ -667,6 +668,81 @@ class ContractViewSet(ModelViewSet):
             return Response({"message": "No file to delete."})
 
 
+class SuggestedContractViewSet(viewsets.ModelViewSet):
+    queryset = SuggestedContract.objects.all()
+    serializer_class = serializers.SuggestedContractSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        contract_id = self.kwargs["contract_pk"]
+        suggestion_id = self.kwargs["pk"]
+        return queryset.filter(contract_id=contract_id, id=suggestion_id)
+
+    def perform_create(self, serializer):
+        contract_id = self.kwargs["pk"]
+        contract = get_object_or_404(Contract, id=contract_id)
+        serializer.save(contract=contract)
+
+    @action(detail=True, methods=["post"])
+    def accept(self, request, contract_pk=None, pk=None):
+        suggestion = self.get_object()
+        contract = suggestion.contract
+
+        contract.rent_amount = suggestion.suggested_rent_amount
+        contract.save()
+
+        # Retrieve the room and apartment related to the contract
+        room = contract.room
+        apartment = room.apartment
+
+        # Retrieve the sender CustomUser instance
+        sender = room.apartment.owner
+
+        # Create Inquiry instance
+        receiver = suggestion.price_suggested_by
+        message = f"The contract {contract.pk} has been accepted."
+        type = "other"  # You may choose a more appropriate type
+
+        inquiry = Inquiry.objects.create(
+            sender=sender,
+            receiver=receiver,
+            apartment=apartment,
+            message=message,
+            type=type,
+        )
+        inquiry.save()
+
+        suggestion.delete()
+
+        return Response({"detail": "Suggestion accepted"})
+
+    @action(detail=True, methods=["delete"])
+    def decline(self, request, contract_pk=None, pk=None):
+        suggestion = self.get_object()
+
+        room = suggestion.contract.room
+        apartment = room.apartment
+
+        sender = room.apartment.owner
+
+        receiver = suggestion.price_suggested_by
+        message = f"The suggestion {suggestion.pk} has been declined."
+        type = "other"
+
+        inquiry = Inquiry.objects.create(
+            sender=sender,
+            receiver=receiver,
+            apartment=apartment,
+            message=message,
+            type=type,
+        )
+        inquiry.save()
+
+        suggestion.delete()
+
+        return Response({"detail": "Suggestion declined"})
+
+
 class BillViewSet(ModelViewSet):
     serializer_class = serializers.BillSerializer
     permission_classes = [permissions.IsAuthenticated, IsApartmentOwner]
@@ -808,6 +884,17 @@ class ApartmentInquiryViewSet(
             return room.apartment if room else None
 
 
+class SimpleInquiryViewst(viewsets.ReadOnlyModelViewSet):
+    queryset = Inquiry.objects.all()
+
+    serializer_class = serializers.SimpleInquirySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Inquiry.objects.filter(Q(sender=user) | Q(receiver=user))
+
+
 class UserInquiryViewSet(viewsets.ModelViewSet):
     queryset = Inquiry.objects.all()
     serializer_class = serializers.InquirySerializer
@@ -824,11 +911,11 @@ class UserInquiryViewSet(viewsets.ModelViewSet):
     ]
     search_fields = [
         "message",
-        "apartment__city",  # Example of how to use search_fields with a ForeignKey field
+        "apartment__city",
         "apartment__street",
         "apartment__building_number",
         "apartment__apartment_number",
-        "sender__username",  # Example of how to use search_fields with a related model
+        "sender__username",
         "receiver__username",
     ]
     ordering_fields = ["created_at"]
