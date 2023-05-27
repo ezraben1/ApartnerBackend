@@ -5,6 +5,7 @@ from core.views import (
     ApartmentImageViewSet,
     ContractViewSet,
     BillViewSet,
+    DepositGuaranteeBillViewSet,
     RoomImageViewSet,
     RoomViewSet,
     SuggestedContractViewSet,

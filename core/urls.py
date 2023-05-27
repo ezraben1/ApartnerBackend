@@ -16,6 +16,11 @@ custom_router.register(
 custom_router.register(
     "simple-inquiries", views.SimpleInquiryViewst, basename="simple-inquiries"
 )
+custom_router.register(
+    "deposits-guarantees",
+    views.DepositGuaranteeBillViewSet,
+    basename="deposits-guarantees",
+)
 
 urlpatterns = [
     path("hellosign_webhook/", views.hellosign_webhook, name="hellosign_webhook"),

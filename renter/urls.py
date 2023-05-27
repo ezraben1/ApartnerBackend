@@ -3,6 +3,7 @@ from rest_framework_nested import routers
 from core.views import (
     ApartmentInquiryViewSet,
     CustomUserViewSet,
+    DepositGuaranteeBillViewSet,
     ReviewViewSet,
 )
 from renter.views import (
@@ -27,6 +28,18 @@ urlpatterns = [
         "my-apartment/inquiries/",
         ApartmentInquiryViewSet.as_view({"get": "list", "post": "create"}),
         name="renter-inquiries",
+    ),
+    path(
+        "my-apartment/deposits-guarantees/",
+        DepositGuaranteeBillViewSet.as_view({"get": "list", "post": "create"}),
+        name="deposits-guarantees",
+    ),
+    path(
+        "my-apartment/deposits-guarantees/<int:pk>",
+        DepositGuaranteeBillViewSet.as_view(
+            {"get": "retrieve", "post": "create", "delete": "destroy"}
+        ),
+        name="deposits-guarantees",
     ),
     path(
         "my-room/<int:room_id>/contracts/<int:pk>/",

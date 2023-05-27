@@ -32,6 +32,7 @@ from core.pagination import DefaultPagination
 from core.permissions import (
     IsApartmentOwner,
     IsAuthenticated,
+    IsRoomRenter,
     IsSearcher,
 )
 from django.core.mail import send_mail
@@ -961,3 +962,72 @@ class InquiryReplyViewSet(
         inquiry_id = self.kwargs.get("pk")
         inquiry = Inquiry.objects.get(pk=inquiry_id)
         serializer.save(inquiry=inquiry, sender=self.request.user)
+
+
+class DepositGuaranteeBillViewSet(viewsets.ModelViewSet):
+    serializer_class = serializers.DepositGuaranteeBillSerializer
+    permission_classes = [permissions.IsAuthenticated, IsRoomRenter]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            room = user.rooms_rented
+            apartment = room.apartment
+            return Bill.objects.filter(
+                apartment=apartment, bill_type=Bill.DEPOSITS_GUARANTEES
+            )
+        except Room.DoesNotExist:
+            return Bill.objects.none()
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    def get_object(self):
+        pk = self.kwargs.get("pk")
+        return get_object_or_404(Bill, pk=pk)
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        room = user.rooms_rented
+        apartment = room.apartment
+        serializer.save(
+            apartment=apartment, bill_type=Bill.DEPOSITS_GUARANTEES, created_by=user
+        )
+
+    @action(detail=True, methods=["post", "patch"])
+    def pay(self, request, pk=None):
+        bill = self.get_object()
+        if not bill.paid:
+            bill.paid = True
+            bill.save()
+            return Response({"status": "success"})
+        return Response(
+            {"status": "error", "message": "This bill has already been paid."}
+        )
+
+    @action(
+        detail=False, methods=["get"], url_path=r"my-bills/(?P<bill_id>\d+)/download"
+    )
+    @action(detail=True, methods=["get"])
+    def download(self, request, apartment_id=None, bill_id=None, *args, **kwargs):
+        bill = self.get_object()
+        if not bill.file:
+            return Response(
+                {"error": "No file available."}, status=status.HTTP_404_NOT_FOUND
+            )
+        file_url = bill.file.url
+        if not file_url.endswith(".pdf"):
+            file_url += ".pdf"
+
+        try:
+            file_response = FileResponse(requests.get(file_url, stream=True))
+            file_response["Content-Disposition"] = 'attachment; filename="bill.pdf"'
+            return file_response
+        except requests.exceptions.RequestException as e:
+            return Response(
+                {"error": "Failed to download the file."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

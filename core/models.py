@@ -207,7 +207,7 @@ class Bill(models.Model):
         (WATER, "Water"),
         (RENT, "Rent"),
         (OTHER, "Other"),
-        (DEPOSITS_GUARANTEES, "Deposits/Guarantees"),
+        (DEPOSITS_GUARANTEES, "deposits_guarantees"),
     ]
 
     apartment = models.ForeignKey(

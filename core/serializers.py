@@ -125,6 +125,67 @@ class BillSerializer(serializers.ModelSerializer):
         return instance
 
 
+class DepositGuaranteeBillSerializer(serializers.ModelSerializer):
+    file = serializers.FileField(max_length=None, use_url=True, required=False)
+
+    class Meta:
+        model = Bill
+        fields = [
+            "id",
+            "apartment",
+            "bill_type",
+            "amount",
+            "date",
+            "paid",
+            "created_by",
+            "created_at",
+            "file",
+        ]
+        read_only_fields = ["created_by", "created_at"]
+
+    def validate(self, data):
+        # Validate date is not in the future
+        if "date" in data and data["date"] > timezone.localdate():
+            raise serializers.ValidationError("Date cannot be in the future.")
+
+        return data
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data["file"] and not data["file"].endswith(".pdf"):
+            data["file"] += ".pdf"
+        return data
+
+    def create(self, validated_data):
+        file = validated_data.pop("file", None)
+
+        if file:
+            upload_result = upload(file, resource_type="raw")
+            validated_data["file"] = upload_result["url"]
+
+        bill = Bill.objects.create(**validated_data)
+
+        return bill
+
+    def update(self, instance, validated_data):
+        file = validated_data.get("file", None)
+
+        if file:
+            if instance.file:
+                public_id = instance.file.public_id
+                cloudinary.uploader.destroy(public_id, resource_type="raw")
+
+            upload_result = upload(file, resource_type="raw")
+            validated_data["file"] = upload_result["url"]
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+
+        instance.save()
+
+        return instance
+
+
 class ApartmentImageSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(max_length=None, use_url=True)
 
