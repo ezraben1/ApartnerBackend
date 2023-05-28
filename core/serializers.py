@@ -6,7 +6,6 @@ from .models import (
     Room,
     Apartment,
     RoomImage,
-    Review,
     CustomUser,
     Contract,
     Bill,
@@ -442,16 +441,6 @@ class RoomSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         return instance
-
-
-class ReviewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Review
-        fields = ["id", "date", "name", "description"]
-
-    def create(self, validated_data):
-        product_id = self.context["product_id"]
-        return Review.objects.create(product_id=product_id, **validated_data)
 
 
 class SimpleUserSerializer(serializers.ModelSerializer):

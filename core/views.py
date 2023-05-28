@@ -1,6 +1,5 @@
 import json
 import os
-import pprint
 import time
 import traceback
 from django_filters.rest_framework import DjangoFilterBackend
@@ -13,7 +12,6 @@ from .models import (
     CustomUser,
     Inquiry,
     InquiryReply,
-    Review,
     Room,
     RoomImage,
     Bill,
@@ -49,8 +47,6 @@ import tempfile
 from django.views.decorators.csrf import csrf_exempt
 from dropbox_sign import ApiClient, ApiException, Configuration, apis, models
 from rest_framework.views import APIView
-from django.contrib.auth import get_user_model
-from django.contrib.auth.decorators import login_required
 
 
 class ApartmentImageViewSet(ModelViewSet):
@@ -810,22 +806,6 @@ class BillViewSet(ModelViewSet):
             return Response({"message": "File deleted successfully."})
         else:
             return Response({"message": "No file to delete."})
-
-
-class ReviewViewSet(ModelViewSet):
-    serializer_class = serializers.ReviewSerializer
-
-    def get_queryset(self):
-        if "room_pk" in self.kwargs:
-            return Review.objects.filter(room_id=self.kwargs["room_pk"])
-        else:
-            return Review.objects.all()
-
-    def get_serializer_context(self):
-        if "room_pk" in self.kwargs:
-            return {"room_id": self.kwargs["room_pk"]}
-        else:
-            return {}
 
 
 class ApartmentInquiryViewSet(

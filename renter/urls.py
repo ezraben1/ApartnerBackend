@@ -4,7 +4,6 @@ from core.views import (
     ApartmentInquiryViewSet,
     CustomUserViewSet,
     DepositGuaranteeBillViewSet,
-    ReviewViewSet,
 )
 from renter.views import (
     RenterApartmentViewSet,
@@ -50,11 +49,6 @@ urlpatterns = [
         "my-room/<int:room_id>/bills/",
         RenterRoomViewSet.as_view({"get": "get_bills"}),
         name="room-bills",
-    ),
-    path(
-        "renter-search/<int:room_id>/review/<int:pk>/",
-        ReviewViewSet.as_view({"get": "retrieve"}),
-        name="review-detail",
     ),
     path(
         "my-bills/<int:pk>/download/",

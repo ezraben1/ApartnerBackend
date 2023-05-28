@@ -2,8 +2,6 @@ from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
-from uuid import uuid4
-from .validators import validate_file_size
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.utils.translation import gettext as _
 from phonenumber_field.modelfields import PhoneNumberField
@@ -292,10 +290,3 @@ class InquiryReply(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-
-
-class Review(models.Model):
-    product = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="reviews")
-    name = models.CharField(max_length=255)
-    description = models.TextField()
-    date = models.DateField(auto_now_add=True)

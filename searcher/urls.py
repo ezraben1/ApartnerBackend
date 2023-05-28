@@ -3,8 +3,6 @@ from rest_framework_nested import routers
 from core.views import (
     ApartmentInquiryViewSet,
     CustomUserViewSet,
-    ReviewViewSet,
-    RoomViewSet,
     SignatureStatusView,
     SuggestedContractViewSet,
 )
@@ -16,9 +14,6 @@ app_name = "searcher"
 router = routers.DefaultRouter()
 router.register("searcher-search", SearcherRoomViewSet, basename="search")
 router.register("me", CustomUserViewSet, basename="me")
-
-rooms_router = routers.NestedSimpleRouter(router, "searcher-search", lookup="pk")
-rooms_router.register("reviews", ReviewViewSet, basename="room-reviews")
 
 
 urlpatterns = [

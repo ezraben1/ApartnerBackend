@@ -161,8 +161,13 @@ class InquiryReplyAdmin(admin.ModelAdmin):
     search_fields = ("inquiry__apartment__address", "message", "sender__email")
 
 
+@admin.register(SuggestedContract)
+class SuggestedContractAdmin(admin.ModelAdmin):
+    list_display = ("suggested_rent_amount", "price_suggested_by")
+    search_fields = ("suggested_rent_amount", "price_suggested_by")
+
+
 admin.site.register(Bill, BillAdmin)
 
 
 admin.site.register(models.CustomUser, CustomUserAdmin)
-admin.site.register(SuggestedContract)
