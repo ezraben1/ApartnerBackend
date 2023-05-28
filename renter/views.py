@@ -134,24 +134,23 @@ class RenterContractViewSet(viewsets.ModelViewSet):
         else:
             return Contract.objects.none()
 
-    @action(detail=True, methods=["get"], url_path="download")
+    @action(detail=True, methods=["get"])
     def download(self, request, *args, **kwargs):
         contract = self.get_object()
         if not contract.file:
             return Response(
                 {"error": "No file available."}, status=status.HTTP_404_NOT_FOUND
             )
+        file_url = contract.file.url
+        if not file_url.endswith(".pdf"):
+            file_url += ".pdf"
 
-        file_path = contract.file.path
-        if os.path.exists(file_path):
-            response = FileResponse(
-                open(file_path, "rb"), content_type="application/octet-stream"
-            )
-            response[
-                "Content-Disposition"
-            ] = f"attachment; filename={os.path.basename(file_path)}"
-            return response
-        else:
+        try:
+            file_response = FileResponse(requests.get(file_url, stream=True))
+            file_response["Content-Disposition"] = 'attachment; filename="contract.pdf"'
+            return file_response
+        except requests.exceptions.RequestException as e:
             return Response(
-                {"error": "File not found."}, status=status.HTTP_404_NOT_FOUND
+                {"error": "Failed to download the file."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
