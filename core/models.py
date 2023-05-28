@@ -268,7 +268,7 @@ class Inquiry(models.Model):
     type = models.CharField(max_length=20, choices=INQUIRY_TYPE_CHOICES)
     message = models.TextField()
     image = CloudinaryField("image", blank=True, null=True)
-    read = models.BooleanField(default=False)  # Add the read field here
+    read = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Inquiry #{self.id} about {self.apartment.address}"

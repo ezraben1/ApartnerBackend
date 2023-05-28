@@ -21,4 +21,4 @@ cloudinary.config(
     api_key=("419768594117284"),
     api_secret=("zexmum1c5fbT8-959jXEb1VQj2w"),
 )
-# ALLOWED_HOSTS = ["ecac-77-125-161-21.ngrok-free.app", "http://localhost:3000/"]
+ALLOWED_HOSTS = ["7c53-77-125-161-21.ngrok-free.app", "http://localhost:3000/"]

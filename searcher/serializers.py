@@ -8,6 +8,8 @@ from rest_framework import serializers
 
 class SearcherApartmentSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source="owner.email")
+    owner_id = serializers.ReadOnlyField(source="owner.id")
+
     images = ApartmentImageSerializer(many=True, read_only=True)
 
     def get_bill_ids(self, obj):
@@ -19,6 +21,7 @@ class SearcherApartmentSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "owner",
+            "owner_id",
             "address",
             "city",
             "street",

@@ -470,7 +470,9 @@ class SimpleInquirySerializer(serializers.ModelSerializer):
 
 
 class InquirySerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(max_length=None, use_url=True)
+    image = serializers.ImageField(
+        max_length=None, use_url=True, required=False, allow_null=True
+    )
 
     sender = SimpleUserSerializer(read_only=True)
     receiver = SimpleUserSerializer(read_only=True)
