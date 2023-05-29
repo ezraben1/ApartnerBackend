@@ -1,5 +1,4 @@
 from django.http import Http404
-from rest_framework import permissions
 from core import serializers
 from core.filters import RoomFilter
 from core.models import Contract, Room
@@ -10,11 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from core.permissions import IsAuthenticated
 from core.views import ContractViewSet
-
 from searcher.serializers import SearcherRoomSerializer
-
-
-from django.db.models import Q
 
 
 class SearcherRoomViewSet(viewsets.ReadOnlyModelViewSet):

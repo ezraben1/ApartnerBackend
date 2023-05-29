@@ -28,8 +28,6 @@ router = routers.DefaultRouter()
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # todo:
-    # path('', views.getRoutes, name="routes"),
     path("", include("main_page.urls")),
     path("core/", include(("core.urls", "core"), namespace="core"), name="core"),
     path("owner/", include(("owner.urls", "owner"), namespace="owner"), name="owner"),

@@ -1,6 +1,4 @@
-from django.shortcuts import render
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.http import JsonResponse
 from rest_framework import viewsets
 from login.authentication import ExpiredTokenAuthentication
 from rest_framework.response import Response
@@ -34,7 +32,7 @@ class LoginViewSet(viewsets.ViewSet):
                     key=settings.SIMPLE_JWT["AUTH_COOKIE"],
                     value=data["access"],
                     expires=settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"],
-                    secure=False,  # set secure to False
+                    secure=False,
                     httponly=settings.SIMPLE_JWT["AUTH_COOKIE_HTTP_ONLY"],
                     samesite=settings.SIMPLE_JWT["AUTH_COOKIE_SAMESITE"],
                 )

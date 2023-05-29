@@ -61,6 +61,7 @@ filters = "*"
 cloudinary = "*"
 hellosign-python-sdk = "*"
 dropbox-sign = "*"
+openpyxl = "*"
 
 [dev-packages]
 

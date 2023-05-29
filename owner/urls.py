@@ -5,7 +5,6 @@ from core.views import (
     ApartmentImageViewSet,
     ContractViewSet,
     BillViewSet,
-    DepositGuaranteeBillViewSet,
     RoomImageViewSet,
     RoomViewSet,
     SuggestedContractViewSet,
@@ -26,6 +25,16 @@ router.register(
 
 
 urlpatterns = [
+    path(
+        "owner/owner-bills/monthly_report",
+        BillViewSet.as_view({"get": "monthly_report"}),
+        name="monthly_report",
+    ),
+    path(
+        "owner/owner-bills/annual_report",
+        BillViewSet.as_view({"get": "annual_report"}),
+        name="annual_report",
+    ),
     path(
         "owner-apartments/<int:pk>/upload_image/",
         views.OwnerApartmentViewSet.as_view({"patch": "upload_image"}),

@@ -1,7 +1,5 @@
-import os
-from django.conf import settings
+import datetime
 from django.http import FileResponse, Http404
-from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from core.permissions import IsAuthenticated, IsRoomRenter
 from rest_framework import permissions
@@ -14,13 +12,10 @@ from core.serializers import (
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions
 from core.models import Apartment, Bill, Contract, Room
-from core.serializers import ApartmentSerializer
 from rest_framework.response import Response
 from core.serializers import RoomSerializer
 from rest_framework.decorators import action
 from rest_framework import permissions, status
-from django.core.mail import send_mail
-
 from renter.serializers import RenterApartmentSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
@@ -84,6 +79,8 @@ class RenterBillViewSet(viewsets.ReadOnlyModelViewSet):
         bill = self.get_object()
         if not bill.paid:
             bill.paid = True
+            bill.paid_by = request.user
+            bill.payment_date = datetime.now()
             bill.save()
             return Response({"status": "success"})
         return Response(

@@ -223,6 +223,17 @@ class Bill(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     file = CloudinaryField("file", blank=True, null=True)
+    paid_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        related_name="bills_paid",
+        null=True,
+        blank=True,
+        help_text=_("User who paid the bill."),
+    )
+    payment_date = models.DateField(
+        null=True, blank=True, help_text=_("Date when the bill was paid.")
+    )
 
     class Meta:
         ordering = ["-date"]

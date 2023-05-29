@@ -7,6 +7,8 @@ from . import models
 from django.contrib.auth.admin import UserAdmin
 from django.core.exceptions import PermissionDenied
 from .models import Bill, Inquiry, InquiryReply, SuggestedContract
+from django.http import HttpResponse
+import csv
 
 
 @admin.register(models.Room)
@@ -98,6 +100,23 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     )
+    actions = ["export_to_csv"]
+
+    def export_to_csv(self, request, queryset):
+        meta = self.model._meta
+        field_names = [field.name for field in meta.fields]
+
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = "attachment; filename={}.csv".format(meta)
+        writer = csv.writer(response)
+
+        writer.writerow(field_names)
+        for obj in queryset:
+            row = writer.writerow([getattr(obj, field) for field in field_names])
+
+        return response
+
+    export_to_csv.short_description = "Export Selected"
 
 
 @admin.register(models.Contract)
@@ -110,9 +129,6 @@ class ContractAdmin(admin.ModelAdmin):
         "tenant__first_name",
         "tenant__last_name",
     ]
-
-
-from django.contrib import admin
 
 
 class BillAdmin(admin.ModelAdmin):

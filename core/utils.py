@@ -5,18 +5,7 @@ import cloudinary.uploader
 import os
 import tempfile
 import cloudinary
-from rest_framework.response import Response
 import time
-
-
-def send_email(recipient_list, subject, message):
-    send_mail(
-        subject=subject,
-        message=message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=recipient_list,
-        fail_silently=False,
-    )
 
 
 def download_and_upload_signed_contract(signature_request_id):

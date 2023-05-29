@@ -72,6 +72,8 @@ class BillSerializer(serializers.ModelSerializer):
             "created_by",
             "created_at",
             "file",
+            "paid_by",
+            "payment_date",
         ]
         read_only_fields = ["created_by", "created_at"]
 

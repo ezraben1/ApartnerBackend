@@ -47,6 +47,12 @@ import tempfile
 from django.views.decorators.csrf import csrf_exempt
 from dropbox_sign import ApiClient, ApiException, Configuration, apis, models
 from rest_framework.views import APIView
+from datetime import datetime, timedelta
+import openpyxl
+from openpyxl.styles import PatternFill
+from openpyxl.utils import get_column_letter
+from django.http import HttpResponse
+from django.utils.timezone import make_naive
 
 
 class ApartmentImageViewSet(ModelViewSet):
@@ -100,7 +106,6 @@ class ApartmentViewSet(ModelViewSet):
         "destroy": [permissions.IsAuthenticated, IsApartmentOwner],
         "contracts": [permissions.IsAuthenticated, IsApartmentOwner],
         "bills": [permissions.IsAuthenticated, IsApartmentOwner],
-        "send_email": [permissions.IsAuthenticated, IsSearcher],
     }
 
     def get_permissions(self):
@@ -125,20 +130,6 @@ class ApartmentViewSet(ModelViewSet):
         bills = Bill.objects.filter(apartment=apartment)
         serializer = serializers.BillSerializer(bills, many=True)
         return Response(serializer.data)
-
-    @action(detail=True, methods=["post"])
-    def send_email(self, request, pk=None):
-        apartment = self.get_object()
-        owner_email = apartment.owner.email
-        subject = "Regarding Apartment %d" % apartment.id
-        message = (
-            "I am interested in the apartment. Please contact me at this email address: %s"
-            % request.user.email
-        )
-        send_mail(
-            subject, message, "from@example.com", [owner_email], fail_silently=False
-        )
-        return Response({"message": "Email sent"})
 
     def get_queryset(self):
         user = self.request.user
@@ -545,13 +536,6 @@ class ContractViewSet(ModelViewSet):
                         "contract signature_request_id:", contract.signature_request_id
                     )
 
-                    # user.user_type = "renter"  # update user type to Renter
-                    # user.save()
-
-                    # room = Room.objects.get(contract=contract)
-                    # room.renter = user  # Set the Room's renter to the new renter
-                    # room.save()
-
                     sign_url = get_embedded_sign_url(signature_id)
                     return Response({"sign_url": sign_url})
 
@@ -562,7 +546,7 @@ class ContractViewSet(ModelViewSet):
             except ApiException as e:
                 print("Exception when calling Dropbox Sign API: %s\n" % e)
                 raise e
-            except Exception as e:  # add this
+            except Exception as e:
                 print("Unexpected error occurred: ", e)
                 raise
 
@@ -570,7 +554,7 @@ class ContractViewSet(ModelViewSet):
     def upload_signed_document(self, request, *args, **kwargs):
         contract = self.get_object()
 
-        for _ in range(12):  # try for roughly one minute
+        for _ in range(12):
             uploaded_url = download_and_upload_signed_contract(
                 contract.signature_request_id
             )
@@ -598,11 +582,8 @@ class ContractViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_authenticated and user.user_type == "owner":
-            # Filter apartments by owner
             apartments = Apartment.objects.filter(owner=user)
-            # Filter rooms by apartments
             rooms = Room.objects.filter(apartment__in=apartments)
-            # Filter contracts by rooms
             contracts = Contract.objects.filter(room__in=rooms)
             return contracts
         else:
@@ -698,7 +679,7 @@ class SuggestedContractViewSet(viewsets.ModelViewSet):
         # Create Inquiry instance
         receiver = suggestion.price_suggested_by
         message = f"The contract {contract.pk} has been accepted."
-        type = "other"  # You may choose a more appropriate type
+        type = "other"
 
         inquiry = Inquiry.objects.create(
             sender=sender,
@@ -807,6 +788,108 @@ class BillViewSet(ModelViewSet):
         else:
             return Response({"message": "No file to delete."})
 
+    @action(detail=False, methods=["get"])
+    def monthly_report(self, request, *args, **kwargs):
+        return self._generate_report(request, "monthly")
+
+    @action(detail=False, methods=["get"])
+    def annual_report(self, request, *args, **kwargs):
+        return self._generate_report(request, "annual")
+
+    def _generate_report(self, request, period):
+        user = request.user
+        owned_apartments = user.apartments_owned.all()
+
+        if period == "monthly":
+            start_date = datetime.now() - timedelta(days=30)
+        elif period == "annual":
+            start_date = datetime.now() - timedelta(days=365)
+        else:
+            return Response(
+                {"error": f"Invalid period: {period}."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        bills = Bill.objects.filter(
+            apartment__in=list(owned_apartments),
+            created_at__gte=start_date,
+        )
+
+        # Prepare the Excel workbook
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+
+        # Write the headers
+        headers = [
+            "ID",
+            "Apartment",
+            "Bill Type",
+            "Amount",
+            "Bill Date",
+            "Paid",
+            "Created By",
+            "Created At",
+            "Paid By",
+            "Payment Date",
+        ]
+        for col_num, header in enumerate(headers, 1):
+            col_letter = get_column_letter(col_num)
+            worksheet[f"{col_letter}1"] = header
+
+        # Apply formatting to the headers
+        header_fill = PatternFill(
+            start_color="FFC00000", end_color="FFC00000", fill_type="solid"
+        )
+        for col_num in range(1, len(headers) + 1):
+            col_letter = get_column_letter(col_num)
+            cell = worksheet[f"{col_letter}1"]
+            cell.fill = header_fill
+
+        # Write the data rows
+        row_num = 2
+        for bill in bills:
+            # Convert datetime objects to timezone-aware objects with timezone set to None
+            created_at = make_naive(bill.created_at) if bill.created_at else "N/A"
+            payment_date = make_naive(bill.payment_date) if bill.payment_date else "N/A"
+
+            data_row = [
+                bill.id,
+                bill.apartment.id,
+                bill.bill_type,
+                bill.amount,
+                bill.date,
+                bill.paid,
+                bill.created_by.username if bill.created_by else "N/A",
+                created_at,
+                bill.paid_by.username if bill.paid_by else "N/A",
+                payment_date,
+            ]
+            for col_num, value in enumerate(data_row, 1):
+                col_letter = get_column_letter(col_num)
+                cell = worksheet[f"{col_letter}{row_num}"]
+                cell.value = value
+
+                # Apply formatting based on "Paid" status
+                if not bill.paid:
+                    cell.fill = PatternFill(
+                        start_color="FFFF0000", end_color="FFFF0000", fill_type="solid"
+                    )
+                else:
+                    cell.fill = PatternFill(
+                        start_color="FF00FF00", end_color="FF00FF00", fill_type="solid"
+                    )
+
+            row_num += 1
+
+        # Create the response
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = f'attachment; filename="{period}_report.xlsx"'
+        workbook.save(response)
+
+        return response
+
 
 class ApartmentInquiryViewSet(
     mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet
@@ -846,7 +929,6 @@ class ApartmentInquiryViewSet(
                 apartment=apartment, sender=self.request.user, receiver=receiver
             )
             print("Inquiry created:", inquiry)
-            # Return a successful response with the created Inquiry data
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             print("Serializer is invalid:", serializer.errors)

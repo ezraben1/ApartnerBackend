@@ -1,5 +1,3 @@
-from django.http import HttpResponseForbidden
-from django.shortcuts import get_object_or_404
 from core import serializers
 from core.models import Apartment, ApartmentImage, Bill, Contract, Room, RoomImage
 from core.permissions import IsApartmentOwner
@@ -9,9 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from cloudinary.uploader import upload
-
 from owner.serializers import OwnerContractSuggestionSerializer
-from django.contrib.auth.decorators import login_required
 
 
 class OwnerApartmentViewSet(ApartmentViewSet):
