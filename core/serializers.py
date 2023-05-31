@@ -17,46 +17,6 @@ from cloudinary.uploader import upload
 import cloudinary
 
 
-class CustomUserSerializer(serializers.ModelSerializer):
-    avatar = serializers.ImageField(max_length=None, use_url=True)
-
-    class Meta:
-        model = CustomUser
-        fields = (
-            "id",
-            "username",
-            "email",
-            "password",
-            "user_type",
-            "first_name",
-            "last_name",
-            "avatar",
-            "age",
-            "gender",
-            "bio",
-            "preferred_location",
-            "preferred_roommates",
-            "preferred_rent",
-        )
-        extra_kwargs = {"password": {"write_only": True}}
-
-    def create(self, validated_data):
-        password = validated_data.pop("password")
-        avatar = validated_data.pop("avatar", None)
-
-        user = CustomUser(**validated_data)
-
-        if avatar is not None:
-            user.avatar = avatar
-
-        user.set_password(password)
-        user.save()
-        return user
-
-
-from django.utils import timezone
-
-
 class BillSerializer(serializers.ModelSerializer):
     file = serializers.FileField(max_length=None, use_url=True, required=False)
 
@@ -191,7 +151,7 @@ class ApartmentImageSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(max_length=None, use_url=True)
 
     def create(self, validated_data):
-        print(validated_data)  # Debug: print the validated data
+        print(validated_data)
         apartment_id = self.context["apartment_id"]
         return ApartmentImage.objects.create(
             apartment_id=apartment_id, **validated_data
@@ -238,6 +198,43 @@ class ApartmentSerializer(serializers.ModelSerializer):
             "rooms",
             "images",
         ]
+
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    avatar = serializers.ImageField(max_length=None, use_url=True, required=False)
+
+    class Meta:
+        model = CustomUser
+        fields = (
+            "id",
+            "username",
+            "email",
+            "password",
+            "user_type",
+            "first_name",
+            "last_name",
+            "avatar",
+            "age",
+            "gender",
+            "bio",
+            "preferred_location",
+            "preferred_roommates",
+            "preferred_rent",
+        )
+        extra_kwargs = {"password": {"write_only": True}}
+
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        avatar = validated_data.pop("avatar", None)
+
+        user = CustomUser(**validated_data)
+
+        if avatar is not None:
+            user.avatar = avatar
+
+        user.set_password(password)
+        user.save()
+        return user
 
 
 class SimpleApartmentSerializer(serializers.ModelSerializer):

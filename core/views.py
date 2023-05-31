@@ -53,6 +53,8 @@ from openpyxl.styles import PatternFill
 from openpyxl.utils import get_column_letter
 from django.http import HttpResponse
 from django.utils.timezone import make_naive
+from rest_framework.exceptions import PermissionDenied
+from django.db.models import QuerySet
 
 
 class ApartmentImageViewSet(ModelViewSet):
@@ -269,11 +271,19 @@ class RoomViewSet(ModelViewSet):
 
 
 class SignUpLoginViewSet(ModelViewSet):
-    queryset = CustomUser.objects.all()
     serializer_class = serializers.CustomUserSerializer
     permission_classes = [permissions.AllowAny]
 
+    def get_queryset(self) -> "QuerySet":
+        if self.action == "list":
+            return CustomUser.objects.none()  # Return nothing for LIST action
+        return CustomUser.objects.all()  # D
+
     def create(self, request, *args, **kwargs):
+        # Check if user is authenticated
+        if request.user.is_authenticated:
+            raise PermissionDenied("You are already signed up and authenticated!")
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -508,6 +518,7 @@ class ContractViewSet(ModelViewSet):
 
             try:
                 with open(temp_file_path, "rb") as f:
+                    # Create an embedded signature request using the Dropbox Sign API
                     embedded_request = models.SignatureRequestCreateEmbeddedRequest(
                         client_id="b0e3cae5b0eaa2ab368de095fe5ea46a",
                         title="Sign Contract",
@@ -526,6 +537,7 @@ class ContractViewSet(ModelViewSet):
                 os.remove(temp_file_path)  # remove the temporary file after use
                 print("response", response)
 
+                # If signatures exist in the response, update the contract object with the signature request ID
                 if response.signature_request.signatures:
                     signature_id = response.signature_request.signatures[0].signature_id
                     contract.signature_request_id = (
